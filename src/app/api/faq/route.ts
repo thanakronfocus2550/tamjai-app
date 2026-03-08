@@ -10,8 +10,12 @@ export async function GET() {
             orderBy: [{ order: "asc" }, { createdAt: "asc" }],
         });
         return NextResponse.json(faqs);
-    } catch (err) {
-        console.error("FAQ GET error:", err);
-        return NextResponse.json({ error: "Failed to load FAQs" }, { status: 500 });
+    } catch (err: any) {
+        console.error("FAQ GET error:", {
+            message: err.message,
+            stack: err.stack,
+            code: err.code
+        });
+        return NextResponse.json({ error: "Failed to load FAQs", debug: err.message }, { status: 500 });
     }
 }
