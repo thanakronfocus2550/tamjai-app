@@ -17,40 +17,33 @@ export default function TrackStatusPage() {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleSearch = (e: React.FormEvent) => {
+    const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!refCode.trim()) return;
 
         setIsSearching(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsSearching(false);
-            const code = refCode.toUpperCase();
-            if (code === "REF-9X2K") {
-                setResult({
-                    type: "registration",
-                    status: "pending",
-                    storeName: "ส้มตำแซ่บเวอร์ สาขาเอกมัย",
-                    submittedAt: "12 ต.ค. 2024, 14:30 น.",
-                    message: "แอดมินกำลังตรวจสอบข้อมูลและสลิปการโอนเงินของคุณ กรุณารอสักครู่ (ปกติใช้เวลา 15-30 นาที)"
-                });
-            } else if (code === "STORE-101") {
-                setResult({
-                    type: "renewal",
-                    status: "expired",
-                    storeName: "Coffee Garden (ลาดพร้าว)",
-                    owner: "คุณเจน",
-                    package: "Pro Package (Monthly)",
-                    expiresAt: "1 ต.ค. 2024",
-                    message: "แพ็กเกจของคุณหมดอายุแล้ว กรุณาโอนเงินและแนบสลิปเพื่อใช้งานต่อ"
-                });
+        setResult(null);
+
+        try {
+            const res = await fetch(`/api/track/${refCode}`);
+            const data = await res.json();
+
+            if (res.ok) {
+                setResult(data);
             } else {
                 setResult({
                     status: "not_found",
-                    message: "ไม่พบรหัสอ้างอิงนี้ในระบบ กรุณาตรวจสอบอีกครั้ง"
+                    message: data.error || "ไม่พบรหัสอ้างอิงนี้ในระบบ กรุณาตรวจสอบอีกครั้ง"
                 });
             }
-        }, 1500);
+        } catch (err) {
+            setResult({
+                status: "not_found",
+                message: "เกิดข้อผิดพลาดในการเชื่อมต่อระบบ"
+            });
+        } finally {
+            setIsSearching(false);
+        }
     };
 
     return (

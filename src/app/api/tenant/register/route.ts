@@ -39,10 +39,21 @@ export async function POST(req: Request) {
             );
         }
 
+        // Generate a unique reference code: REF-XXXX (4 random chars)
+        const generateRefCode = () => {
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // No I, O, 0, 1 to avoid confusion
+            let result = "";
+            for (let i = 0; i < 4; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return `REF-${result}`;
+        };
+
+        const refCode = generateRefCode();
+
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Use nested create for atomic transaction of Tenant and User
         const user = await prisma.user.create({
             data: {
                 name,
@@ -53,20 +64,25 @@ export async function POST(req: Request) {
                     create: {
                         name: shopName,
                         slug: shopSlug,
+                        refCode, // Save the generated code
                         isActive: false, // Require Superadmin approval for 7-day free trial
                         themeConfig: {
                             primaryColor: "#FF6B00",
                         },
-                    }
+                    } as any
                 }
             },
             include: { tenant: true }
-        });
+        }) as any;
 
         const tenant = user.tenant!;
 
         return NextResponse.json(
-            { message: "ลงทะเบียนสำเร็จ กรุณารอผู้ดูแลระบบอนุมัติเปิดร้าน (เวอร์ชันทดลอง 7 วัน)", shopSlug: tenant.slug },
+            {
+                message: "ลงทะเบียนสำเร็จ กรุณารอผู้ดูแลระบบอนุมัติเปิดร้าน",
+                shopSlug: tenant.slug,
+                refCode: tenant.refCode
+            },
             { status: 201 }
         );
     } catch (error: any) {

@@ -16,7 +16,10 @@ export default function RegisterPage() {
         password: "",
         subdomain: "",
         plan: "free",
+        couponCode: "",
     });
+
+    const [receivedRefCode, setReceivedRefCode] = useState("");
 
     // Platform settings (usually fetched from an API)
     const isFreeTrialActive = true;
@@ -64,7 +67,7 @@ export default function RegisterPage() {
                     shopSlug: formData.subdomain,
                     email: formData.email,
                     password: formData.password,
-                    // Note: nickname, phone, and plan could also be sent and saved if added to the model
+                    couponCode: formData.couponCode,
                 }),
             });
 
@@ -72,6 +75,11 @@ export default function RegisterPage() {
 
             if (!res.ok) {
                 throw new Error(data.message || "Something went wrong");
+            }
+
+            // Save the real REF code from server
+            if (data.refCode) {
+                setReceivedRefCode(data.refCode);
             }
 
             // Success! Move to "Pending Approval" or "Success" state
@@ -378,13 +386,13 @@ export default function RegisterPage() {
                                         )}
 
                                         <label className={`block relative p-4 rounded-2xl border-2 transition-all cursor-pointer ${formData.plan === 'pro' ? 'border-brand-orange bg-orange-50/50' : 'border-gray-200 bg-white hover:border-brand-orange/30'}`}>
-                                            <input type="radio" name="plan" value="pro" checked={formData.plan === 'pro'} onChange={() => updateForm('plan', 'pro')} className="absolute opacity-0" />
+                                            <input type="radio" name="plan" value="pro" checked={formData.plan === 'pro'} onChange={() => updateForm('pro', 'pro')} className="absolute opacity-0" />
                                             <div className="flex items-start justify-between">
                                                 <div>
                                                     <p className="font-black text-gray-900">Tamjai Pro (450฿/เดือน)</p>
                                                     <p className="text-xs font-medium text-gray-500 mt-1">สมัครและแนบสลิปทันทีเพื่อใช้งานไม่สะดุด</p>
                                                 </div>
-                                                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${formData.plan === 'pro' ? 'border-brand-orange bg-brand-orange' : 'border-gray-300'}`}>
+                                                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${formData.plan === 'pro' ? 'border-brand-orange bg-brand-orange' : 'border-gray-200 bg-white'}`}>
                                                     {formData.plan === 'pro' && <div className="h-2 w-2 rounded-full bg-white"></div>}
                                                 </div>
                                             </div>
@@ -428,6 +436,20 @@ export default function RegisterPage() {
                                                 </div>
                                             )}
                                         </label>
+
+                                        {/* Coupon Code Field */}
+                                        <div className="pt-2">
+                                            <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 pl-1">โค้ดส่วนลด (Coupon Code)</label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    placeholder="กรอกโค้ด (ถ้ามี)"
+                                                    value={formData.couponCode}
+                                                    onChange={(e) => updateForm("couponCode", e.target.value.toUpperCase())}
+                                                    className="w-full rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm font-bold text-gray-900 transition-all focus:border-brand-orange focus:ring-4 focus:ring-orange-50 outline-none uppercase tracking-widest"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <p className="text-[11px] font-bold text-gray-400 text-center px-4">
@@ -483,7 +505,7 @@ export default function RegisterPage() {
                                         <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-brand-orange to-orange-300 left-0"></div>
                                         <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">รหัสตรวจสอบสถานะของคุณ</p>
                                         <div className="inline-flex items-center justify-center bg-white border border-gray-200 shadow-sm rounded-xl px-4 py-2 mb-4">
-                                            <span className="text-3xl font-black tracking-widest text-brand-orange">REF-9X2K</span>
+                                            <span className="text-3xl font-black tracking-widest text-brand-orange">{receivedRefCode || "REF-XXXX"}</span>
                                         </div>
 
                                         <div className="bg-orange-50/50 rounded-xl p-4 text-left border border-orange-100">
@@ -516,7 +538,7 @@ export default function RegisterPage() {
                                     </div>
 
                                     <p className="text-xs text-brand-orange font-medium mt-4">
-                                        * กรุณาแคปหน้าจอเก็บรหัส REF-9X2K ไว้
+                                        * กรุณาแคปหน้าจอเก็บรหัส {receivedRefCode || "REF-XXXX"} ไว้
                                     </p>
                                 </motion.div>
                             )}

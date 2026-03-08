@@ -28,6 +28,7 @@ model Tenant {
   name          String
   slug          String    @unique
   customDomain  String?   @unique
+  refCode       String?   @unique // Registration reference code
   plan          Plan      @default(FREE)
   logoUrl       String?
   themeColor    String    @default("#FF6B00")
@@ -54,7 +55,7 @@ model User {
   password      String
   role          Role      @default(TENANT_ADMIN)
   tenantId      String?
-  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -67,7 +68,7 @@ model Category {
   name        String
   order       Int       @default(0)
   tenantId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   products    Product[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -80,11 +81,11 @@ model Product {
   price         Decimal
   imageUrl      String?
   categoryId    String
-  category      Category  @relation(fields: [categoryId], references: [id])
+  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   isAvailable   Boolean   @default(true)
   addons        Json?     // Array of { name: string, price: number }
   tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -99,7 +100,7 @@ model Order {
   status        String   @default("new") // new, prepping, ready, completed, cancelled
   paymentMethod String   @default("cash")
   tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -107,7 +108,7 @@ model Order {
 model Subscription {
   id            String    @id @default(cuid())
   tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id])
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   amount        Decimal
   startDate     DateTime  @default(now())
   endDate       DateTime
@@ -118,7 +119,7 @@ model HelpdeskTicket {
   id        String   @id @default(cuid())
   ticketId  String   @unique // TK-2024-001 format
   tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   subject   String
   status    String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
   priority  String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
@@ -147,7 +148,7 @@ model PaymentApproval {
   id          String   @id @default(cuid())
   refId       String   @unique // PAY-001 format
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   plan        String
   amount      Decimal
   bank        String
