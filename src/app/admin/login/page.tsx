@@ -31,8 +31,7 @@ function AdminLoginForm() {
             if (res?.error) {
                 setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
             } else if (res?.ok) {
-                router.push(redirectTo);
-                router.refresh();
+                window.location.href = redirectTo;
             }
         } catch (err) {
             setError("เกิดข้อผิดพลาดในการเข้าระบบ");

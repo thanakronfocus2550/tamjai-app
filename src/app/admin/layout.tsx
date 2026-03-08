@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   LayoutDashboard,
   Store,
@@ -27,6 +28,10 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session } = useSession();
+
+  const userName = session?.user?.name || "Super Admin";
+  const userEmail = session?.user?.email || "admin@tamjai.pro";
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", {
@@ -130,8 +135,8 @@ export default function AdminLayout({
               <img src="/admin-logo.png" alt="Tamjai Pro" className="h-full w-full object-cover" />
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-black text-gray-900 truncate">Super Admin</p>
-              <p className="text-[10px] font-bold text-gray-400 truncate mt-0.5">admin@tamjai.pro</p>
+              <p className="text-sm font-black text-gray-900 truncate">{userName}</p>
+              <p className="text-[10px] font-bold text-gray-400 truncate mt-0.5">{userEmail}</p>
             </div>
             <Settings className="h-4 w-4 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>

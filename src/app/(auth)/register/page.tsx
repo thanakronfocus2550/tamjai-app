@@ -34,6 +34,13 @@ export default function RegisterPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
+    const [slipFileName, setSlipFileName] = useState("");
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            setSlipFileName(e.target.files[0].name);
+        }
+    };
 
     const updateForm = (field: string, value: string) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
@@ -399,9 +406,24 @@ export default function RegisterPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="border border-dashed border-brand-orange/50 bg-white rounded-xl p-4 text-center cursor-pointer hover:bg-orange-50/30 transition-colors">
-                                                        <p className="text-xs font-bold text-brand-orange mb-1">+ แตะเพื่ออัปโหลดสลิปชำระเงิน</p>
-                                                        <p className="text-[10px] text-gray-400">รองรับ JPG, PNG เท่านั้น</p>
+                                                    <div className="relative border border-dashed border-brand-orange/50 bg-white rounded-xl p-4 text-center cursor-pointer hover:bg-orange-50/30 transition-colors">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/jpeg, image/png"
+                                                            onChange={handleFileUpload}
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        />
+                                                        {slipFileName ? (
+                                                            <div className="flex flex-col items-center gap-1">
+                                                                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                                                <p className="text-xs font-bold text-gray-900">{slipFileName}</p>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <p className="text-xs font-bold text-brand-orange mb-1">+ แตะเพื่ออัปโหลดสลิปชำระเงิน</p>
+                                                                <p className="text-[10px] text-gray-400">รองรับ JPG, PNG เท่านั้น</p>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}

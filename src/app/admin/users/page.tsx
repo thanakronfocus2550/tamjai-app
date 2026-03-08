@@ -17,23 +17,55 @@ import { useState, useEffect } from "react";
 export default function UsersPage() {
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newAdmin, setNewAdmin] = useState({ name: "", email: "", password: "" });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
+
+    async function fetchUsers() {
+        try {
+            const res = await fetch("/api/admin/users");
+            if (res.ok) {
+                const data = await res.json();
+                setUsers(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch users:", err);
+        } finally {
+            setLoading(false);
+        }
+    }
 
     useEffect(() => {
-        async function fetchUsers() {
-            try {
-                const res = await fetch("/api/admin/users");
-                if (res.ok) {
-                    const data = await res.json();
-                    setUsers(data);
-                }
-            } catch (err) {
-                console.error("Failed to fetch users:", err);
-            } finally {
-                setLoading(false);
-            }
-        }
         fetchUsers();
     }, []);
+
+    const handleAddAdmin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setErrorMsg("");
+        setIsSubmitting(true);
+
+        try {
+            const res = await fetch("/api/admin/users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newAdmin)
+            });
+
+            if (res.ok) {
+                setIsAddModalOpen(false);
+                setNewAdmin({ name: "", email: "", password: "" });
+                fetchUsers();
+            } else {
+                const errData = await res.json();
+                setErrorMsg(errData.error || "เกิดข้อผิดพลาดในการเพิ่มผู้ใช้");
+            }
+        } catch (error) {
+            setErrorMsg("เกิดข้อผิดพลาดของระบบ");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const containerVariants: Variants = {
         hidden: { opacity: 0 },
@@ -72,7 +104,10 @@ export default function UsersPage() {
                     </motion.p>
                 </div>
                 <motion.div variants={itemVariants} className="flex gap-3">
-                    <button className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-lg hover:bg-gray-800 transition-all hover:-translate-y-0.5">
+                    <button
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-lg hover:bg-gray-800 transition-all hover:-translate-y-0.5"
+                    >
                         <UserPlus className="h-4 w-4" /> เพิ่มผู้ดูแลระบบ
                     </button>
                 </motion.div>
@@ -147,6 +182,75 @@ export default function UsersPage() {
                     </table>
                 </div>
             </motion.div>
+
+            {/* Add Admin Modal */}
+            {isAddModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden"
+                    >
+                        <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                            <h3 className="text-xl font-black text-gray-900">เพิ่มผู้ดูแลระบบส่วนกลาง</h3>
+                            <p className="text-sm text-gray-500 font-medium">ระบุข้อมูลผู้ดูแลระบบคนใหม่ ระบบจะตั้งเป็น Super Admin อัตโนมัติ</p>
+                        </div>
+                        <form onSubmit={handleAddAdmin} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">ชื่อ-นามสกุล <span className="text-brand-orange">*</span></label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={newAdmin.name}
+                                    onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })}
+                                    className="w-full rounded-xl border border-gray-200 py-2.5 px-4 text-sm font-medium focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">อีเมล (ล็อกอิน) <span className="text-brand-orange">*</span></label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={newAdmin.email}
+                                    onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                                    className="w-full rounded-xl border border-gray-200 py-2.5 px-4 text-sm font-medium focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1.5">รหัสผ่าน <span className="text-brand-orange">*</span></label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={newAdmin.password}
+                                    onChange={e => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                                    className="w-full rounded-xl border border-gray-200 py-2.5 px-4 text-sm font-medium focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20"
+                                />
+                            </div>
+
+                            {errorMsg && (
+                                <p className="text-sm text-red-500 bg-red-50 border border-red-100 p-3 rounded-xl font-medium">{errorMsg}</p>
+                            )}
+
+                            <div className="pt-4 flex items-center justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddModalOpen(false)}
+                                    className="px-5 py-2.5 rounded-xl font-bold text-gray-500 hover:bg-gray-100 transition-colors"
+                                >
+                                    ยกเลิก
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="px-5 py-2.5 rounded-xl font-bold bg-brand-orange hover:bg-orange-600 text-white shadow-md transition-colors disabled:opacity-50"
+                                >
+                                    {isSubmitting ? "กำลังบันทึก..." : "เพิ่มผู้ดูแลระบบ"}
+                                </button>
+                            </div>
+                        </form>
+                    </motion.div>
+                </div>
+            )}
         </motion.div>
     );
 }

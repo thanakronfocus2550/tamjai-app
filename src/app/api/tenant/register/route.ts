@@ -42,36 +42,31 @@ export async function POST(req: Request) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Transaction to create both Tenant and User
-        const result = await prisma.$transaction(async (tx: any) => {
-            // 1. Create Tenant
-            const tenant = await tx.tenant.create({
-                data: {
-                    name: shopName,
-                    slug: shopSlug,
-                    isActive: true, // Auto-approve for now, can be changed later
-                    themeConfig: {
-                        primaryColor: "#FF6B00", // Default orange
-                    },
-                },
-            });
-
-            // 2. Create User linked to Tenant
-            const user = await tx.user.create({
-                data: {
-                    name,
-                    email,
-                    password: hashedPassword,
-                    role: "TENANT_ADMIN",
-                    tenantId: tenant.id,
-                },
-            });
-
-            return { tenant, user };
+        // Use nested create for atomic transaction of Tenant and User
+        const user = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+                role: "TENANT_ADMIN",
+                tenant: {
+                    create: {
+                        name: shopName,
+                        slug: shopSlug,
+                        isActive: true, // Auto-approve for now
+                        themeConfig: {
+                            primaryColor: "#FF6B00",
+                        },
+                    }
+                }
+            },
+            include: { tenant: true }
         });
 
+        const tenant = user.tenant!;
+
         return NextResponse.json(
-            { message: "ลงทะเบียนร้านค้าสำเร็จ", shopSlug: result.tenant.slug },
+            { message: "ลงทะเบียนร้านค้าสำเร็จ", shopSlug: tenant.slug },
             { status: 201 }
         );
     } catch (error) {
