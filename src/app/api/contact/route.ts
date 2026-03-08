@@ -23,21 +23,26 @@ export async function POST(req: Request) {
         const ticketId = `TK-${dateStr}-${randomNum}`;
 
         // Create helpdesk ticket
-        // @ts-ignore
+        const ticketData: any = {
+            ticketId,
+            subject: topic,
+            ownerName: name,
+            email,
+            priority: (topic === "support" || topic === "complaint") ? "HIGH" : "MEDIUM",
+            messages: [{
+                role: "merchant",
+                content: message + `\n\n[Contact Info: ${phone}]`,
+                createdAt: new Date()
+            }]
+        };
+
+        if (tenantId && tenantId !== "platform") {
+            ticketData.tenantId = tenantId;
+        }
+
+        // @ts-ignore - Prisma schema generated types might be slightly out of sync or missing
         const ticket = await prisma.helpdeskTicket.create({
-            data: {
-                ticketId,
-                tenantId: tenantId === "platform" ? null : tenantId, // if the prisma schema doesn't allow nullable tenantId, we'll need a fallback tenant or we skip linking. Let's see the schema
-                subject: topic,
-                ownerName: name,
-                email,
-                priority: topic === "support" || topic === "complaint" ? "HIGH" : "MEDIUM",
-                messages: [{
-                    role: "merchant",
-                    content: message + `\n\n[Contact Info: ${phone}]`,
-                    createdAt: new Date()
-                }]
-            }
+            data: ticketData
         });
 
         return NextResponse.json({ success: true, ticket });
