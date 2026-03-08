@@ -23,6 +23,7 @@ import {
   Gift
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 const slideUp: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -235,6 +236,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
+  const { data: session } = useSession();
 
   // Check 24hr local storage for promo
   useEffect(() => {
@@ -306,7 +308,13 @@ export default function Home() {
             </Link>
             <Link href="/track" className="flex items-center justify-center text-xs font-bold text-gray-400 hover:text-brand-orange transition-colors">เช็คสถานะ / ต่ออายุ</Link>
             <div className="hidden md:block h-3 w-px bg-gray-200"></div>
-            <Link href="/login" className="flex items-center justify-center text-sm font-bold text-gray-600 hover:text-brand-orange transition-colors py-2 md:py-0">เข้าสู่ระบบ</Link>
+            {session && session.user.role !== 'SUPER_ADMIN' ? (
+              <Link href={`/menu/${session.user.shopSlug || 'admin'}/admin`} className="flex items-center justify-center text-sm font-bold text-brand-orange hover:text-orange-600 transition-colors py-2 md:py-0">
+                {session.user.name || session.user.shopSlug || "Dashboard"}
+              </Link>
+            ) : (
+              <Link href="/login" className="flex items-center justify-center text-sm font-bold text-gray-600 hover:text-brand-orange transition-colors py-2 md:py-0">เข้าสู่ระบบ</Link>
+            )}
             <Link
               href="/register"
               className="group relative inline-flex w-full md:w-auto items-center justify-center overflow-hidden rounded-full bg-brand-orange px-6 py-2.5 font-bold text-white shadow-xl shadow-orange-500/20 transition-transform hover:-translate-y-0.5 hover:shadow-orange-500/40 active:scale-95 border border-orange-500"

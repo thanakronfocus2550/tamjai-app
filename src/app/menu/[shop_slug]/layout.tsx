@@ -69,12 +69,12 @@ export default async function MenuLayout({
                         ขออภัยในความไม่สะดวก ร้านค้า {store.name} กำลังอัปเดตระบบ หรืออยู่ระหว่างการต่ออายุแพ็กเกจ กรุณาลองใหม่อีกครั้งในภายหลัง
                     </p>
                     <div className="space-y-3">
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-black transition-all"
+                        <a
+                            href={`/menu/${shop_slug}`}
+                            className="block w-full py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-black transition-all text-center"
                         >
                             ลองโหลดใหม่อีกครั้ง
-                        </button>
+                        </a>
                     </div>
                     <div className="mt-8 flex items-center justify-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                         <Clock className="h-3 w-3" /> Powered by Tamjai Pro

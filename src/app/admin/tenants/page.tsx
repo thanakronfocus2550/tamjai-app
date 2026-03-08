@@ -9,10 +9,11 @@ import {
     Download,
     MoreVertical,
     Crown,
-    Check,
     Plus,
     X,
-    Edit
+    Edit,
+    Eye,
+    Trash2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -41,6 +42,9 @@ export default function TenantsPage() {
         plan: "FREE",
         isActive: true
     });
+
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [viewingTenant, setViewingTenant] = useState<any>(null);
 
     useEffect(() => {
         fetchTenants();
@@ -114,6 +118,54 @@ export default function TenantsPage() {
     const handleManage = (slug: string) => {
         // Redirect to the tenant's internal settings or dashboard
         window.open(`/menu/${slug}/admin/settings`, '_blank');
+    };
+
+    const handleApprove = async (tenant: any) => {
+        setIsSubmitting(true);
+        try {
+            const res = await fetch(`/api/admin/tenants/${tenant.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isActive: true })
+            });
+
+            if (res.ok) {
+                alert(`อนุมัติร้าน ${tenant.name} ให้ใช้งานเรียบร้อยแล้ว!`);
+                fetchTenants();
+            } else {
+                const err = await res.json();
+                alert("เกิดข้อผิดพลาด: " + err.error);
+            }
+        } catch (err) {
+            alert("Failed to approve tenant");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (tenant: any) => {
+        if (!confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบร้านค้า "${tenant.name}"?\nการกระทำนี้ไม่สามารถย้อนกลับได้`)) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch(`/api/admin/tenants/${tenant.id}`, {
+                method: "DELETE"
+            });
+
+            if (res.ok) {
+                alert(`ลบร้าน ${tenant.name} เรียบร้อยแล้ว!`);
+                fetchTenants();
+            } else {
+                const err = await res.json();
+                alert("เกิดข้อผิดพลาด: " + err.error);
+            }
+        } catch (err) {
+            alert("Failed to delete tenant");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleFilter = () => {
@@ -247,10 +299,17 @@ export default function TenantsPage() {
                                     </td>
                                     <td className="px-6 py-4 border-b border-t border-gray-100 group-hover:border-gray-200 transition-colors">
                                         <div className="flex flex-col gap-1.5 items-start">
-                                            <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-black uppercase border ${t.package === 'PRO' ? 'bg-orange-50 text-brand-orange border-orange-100' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                                                {t.package === 'PRO' && <Crown className="h-3 w-3" />}
-                                                {t.package}
-                                            </span>
+                                            <div className="flex flex-col gap-1 w-full relative">
+                                                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-black uppercase border w-max ${t.package === 'PRO' ? 'bg-orange-50 text-brand-orange border-orange-100' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                                    {t.package === 'PRO' && <Crown className="h-3 w-3" />}
+                                                    {t.package}
+                                                </span>
+                                                {t.package === 'FREE' && (
+                                                    <span className="text-[9px] font-bold text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 sm:static sm:translate-y-0">
+                                                        หมดอายุ: {new Date(new Date(t.joined).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="flex items-center gap-1.5">
                                                 <span className={`h-2 w-2 rounded-full ${t.status === 'Active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                                                 <span className={`text-[10px] font-bold ${t.status === 'Active' ? 'text-emerald-700' : 'text-red-700'}`}>{t.status}</span>
@@ -262,6 +321,26 @@ export default function TenantsPage() {
                                     </td>
                                     <td className="px-6 py-4 rounded-r-2xl text-right border-b border-t border-r border-gray-100 group-hover:border-gray-200 transition-colors">
                                         <div className="flex justify-end gap-2">
+                                            {t.status === 'Inactive' && (
+                                                <>
+                                                    <button
+                                                        onClick={() => {
+                                                            setViewingTenant(t);
+                                                            setIsViewModalOpen(true);
+                                                        }}
+                                                        className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95"
+                                                    >
+                                                        ดูข้อมูล
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleApprove(t)}
+                                                        disabled={isSubmitting}
+                                                        className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                </>
+                                            )}
                                             <button
                                                 onClick={() => handleEditClick(t)}
                                                 className="px-3 py-1.5 rounded-xl bg-gray-50 text-gray-600 hover:bg-gray-100 transition-all text-[10px] font-black uppercase shadow-sm active:scale-95"
@@ -273,6 +352,13 @@ export default function TenantsPage() {
                                                 className="px-3 py-1.5 rounded-xl bg-orange-50 text-brand-orange hover:bg-brand-orange hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95"
                                             >
                                                 Manage
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(t)}
+                                                disabled={isSubmitting}
+                                                className="px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95 disabled:opacity-50"
+                                            >
+                                                <Trash2 className="h-3 w-3" />
                                             </button>
                                         </div>
                                     </td>
@@ -392,6 +478,86 @@ export default function TenantsPage() {
                                     >
                                         {isSubmitting ? "กำลังสร้าง..." : "สร้างร้านค้าทันที"}
                                     </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {isViewModalOpen && viewingTenant && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsViewModalOpen(false)}
+                            className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-lg overflow-hidden rounded-[2.5rem] bg-white shadow-2xl"
+                        >
+                            <div className="p-8">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h3 className="text-2xl font-black text-gray-900">ข้อมูลผู้สมัครเปิดร้าน</h3>
+                                    <button
+                                        onClick={() => setIsViewModalOpen(false)}
+                                        className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                    >
+                                        <X className="h-6 w-6 text-gray-400" />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">ชื่อ-นามสกุลผู้สมัคร</p>
+                                        <p className="font-bold text-gray-900 text-lg">{viewingTenant.owner}</p>
+                                    </div>
+                                    <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">อีเมลติดต่อ</p>
+                                        <p className="font-bold text-gray-900">{viewingTenant.email}</p>
+                                    </div>
+                                    <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">ชื่อร้านค้า</p>
+                                        <p className="font-bold text-gray-900">{viewingTenant.name}</p>
+                                    </div>
+                                    <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Store URL (โดเมน)</p>
+                                        <p className="font-bold text-brand-orange">tamjai.pro/menu/{viewingTenant.slug}</p>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">วันที่สมัคร</p>
+                                            <p className="font-bold text-gray-900 text-sm">{new Date(viewingTenant.joined).toLocaleDateString()}</p>
+                                        </div>
+                                        <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">แพ็กเกจที่เลือก</p>
+                                            <p className="font-bold text-gray-900 text-sm">{viewingTenant.package}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 flex gap-4">
+                                    <button
+                                        onClick={() => setIsViewModalOpen(false)}
+                                        className="flex-1 rounded-2xl border border-gray-200 py-4 text-sm font-black text-gray-500 hover:bg-gray-50 transition-all font-inter"
+                                    >
+                                        ปิด
+                                    </button>
+                                    {viewingTenant.status === 'Inactive' && (
+                                        <button
+                                            onClick={() => {
+                                                setIsViewModalOpen(false);
+                                                handleApprove(viewingTenant);
+                                            }}
+                                            disabled={isSubmitting}
+                                            className="flex-1 rounded-2xl bg-emerald-500 py-4 text-sm font-black text-white hover:bg-emerald-600 transition-all font-inter shadow-lg shadow-emerald-500/30 disabled:opacity-50"
+                                        >
+                                            อนุมัติทันที
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>

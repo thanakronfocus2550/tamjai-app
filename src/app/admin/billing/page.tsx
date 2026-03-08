@@ -24,6 +24,12 @@ export default function BillingPage() {
     const [billingData, setBillingData] = useState<any>(null);
     const [freeStoreCount, setFreeStoreCount] = useState(0);
     const [isEditBankModalOpen, setIsEditBankModalOpen] = useState(false);
+
+    // Payment config state
+    const [paymentConfig, setPaymentConfig] = useState({ bankName: "", accountNo: "", accountName: "" });
+    const [editConfig, setEditConfig] = useState({ bankName: "", accountNo: "", accountName: "" });
+    const [isSaving, setIsSaving] = useState(false);
+
     const MAX_FREE_STORES = 10;
 
     useEffect(() => {
@@ -41,7 +47,18 @@ export default function BillingPage() {
                 setIsLoading(false);
             }
         }
+        async function fetchPaymentConfig() {
+            try {
+                const res = await fetch("/api/config/payment");
+                if (res.ok) {
+                    const data = await res.json();
+                    setPaymentConfig(data);
+                    setEditConfig(data);
+                }
+            } catch (err) { }
+        }
         fetchBilling();
+        fetchPaymentConfig();
     }, []);
 
     const handleDownloadReport = () => {
@@ -133,8 +150,8 @@ export default function BillingPage() {
                                         <Building className="h-5 w-5" />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-gray-900">ธนาคารกสิกรไทย</p>
-                                        <p className="text-xs font-bold text-gray-500">XXX-X-XX456-7</p>
+                                        <p className="font-bold text-gray-900">{paymentConfig.bankName || "ยังไม่ได้ตั้งค่าธนาคาร"}</p>
+                                        <p className="text-xs font-bold text-gray-500">{paymentConfig.accountNo || "-"} ({paymentConfig.accountName || "-"})</p>
                                     </div>
                                     <div className="ml-auto text-[10px] font-black uppercase text-brand-orange bg-white px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                                         Edit
@@ -271,7 +288,7 @@ export default function BillingPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    onClick={() => setIsEditBankModalOpen(false)}
+                                    onClick={() => !isSaving ? setIsEditBankModalOpen(false) : null}
                                     className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
                                 />
                                 <motion.div
@@ -294,11 +311,15 @@ export default function BillingPage() {
                                         <div className="space-y-6">
                                             <div>
                                                 <label className="block text-xs font-black uppercase text-gray-400 mb-1.5 ml-1">ธนาคาร (Bank Name)</label>
-                                                <input type="text" defaultValue="ธนาคารกสิกรไทย" className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white transition-all" />
+                                                <input type="text" value={editConfig.bankName} onChange={e => setEditConfig({ ...editConfig, bankName: e.target.value })} placeholder="เช่น ธนาคารกสิกรไทย" className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white transition-all" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-black uppercase text-gray-400 mb-1.5 ml-1">เลขที่บัญชี (Account Number)</label>
-                                                <input type="text" defaultValue="XXX-X-XX456-7" className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white transition-all" />
+                                                <input type="text" value={editConfig.accountNo} onChange={e => setEditConfig({ ...editConfig, accountNo: e.target.value })} placeholder="เช่น 012-3-45678-9" className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white transition-all" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-black uppercase text-gray-400 mb-1.5 ml-1">ชื่อบัญชี (Account Name)</label>
+                                                <input type="text" value={editConfig.accountName} onChange={e => setEditConfig({ ...editConfig, accountName: e.target.value })} placeholder="เช่น บจก. ตามใจ โปร" className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white transition-all" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-black uppercase text-gray-400 mb-1.5 ml-1">QR Code สำหรับรับเงิน</label>
@@ -314,18 +335,37 @@ export default function BillingPage() {
                                         <div className="mt-10 flex gap-4">
                                             <button
                                                 onClick={() => setIsEditBankModalOpen(false)}
-                                                className="flex-1 rounded-2xl border border-gray-200 py-4 text-sm font-black text-gray-500 hover:bg-gray-50 transition-all"
+                                                disabled={isSaving}
+                                                className="flex-1 rounded-2xl border border-gray-200 py-4 text-sm font-black text-gray-500 hover:bg-gray-50 transition-all disabled:opacity-50"
                                             >
                                                 ยกเลิก
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    alert("อัปเดตข้อมูลบัญชีสำเร็จ! ร้านค้าทั้งหมดจะเห็นข้อมูลใหม่นี้ทันที");
-                                                    setIsEditBankModalOpen(false);
+                                                disabled={isSaving}
+                                                onClick={async () => {
+                                                    setIsSaving(true);
+                                                    try {
+                                                        const res = await fetch("/api/config/payment", {
+                                                            method: "POST",
+                                                            headers: { "Content-Type": "application/json" },
+                                                            body: JSON.stringify(editConfig)
+                                                        });
+                                                        if (res.ok) {
+                                                            setPaymentConfig(editConfig);
+                                                            alert("อัปเดตข้อมูลบัญชีสำเร็จ! ร้านค้าทั้งหมดจะเห็นข้อมูลใหม่นี้ทันที");
+                                                            setIsEditBankModalOpen(false);
+                                                        } else {
+                                                            alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
+                                                        }
+                                                    } catch (err) {
+                                                        alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
+                                                    } finally {
+                                                        setIsSaving(false);
+                                                    }
                                                 }}
-                                                className="flex-2 rounded-2xl bg-brand-orange py-4 text-sm font-black text-white shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all"
+                                                className="flex-2 rounded-2xl bg-brand-orange px-8 py-4 text-sm font-black text-white shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all disabled:opacity-50"
                                             >
-                                                บันทึกการเปลี่ยนแปลง
+                                                {isSaving ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
                                             </button>
                                         </div>
                                     </div>

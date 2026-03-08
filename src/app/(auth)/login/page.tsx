@@ -3,19 +3,54 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Mail, Lock, LogIn, ArrowRight } from "lucide-react";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "/";
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        // In a real app, integrate NextAuth/Auth.js here
-        console.log("Logging in with", email, password);
-        router.push("/");
+        setIsLoading(true);
+        setError("");
+
+        try {
+            const res = await signIn("credentials", {
+                redirect: false,
+                email,
+                password,
+            });
+
+            if (res?.error) {
+                setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+            } else {
+                // Get session to know the role for redirection
+                const sessionRes = await fetch("/api/auth/session");
+                const session = await sessionRes.json();
+
+                if (session?.user?.role === 'SUPER_ADMIN') {
+                    router.push('/admin');
+                } else if (session?.user?.shopSlug) {
+                    router.push(`/menu/${session.user.shopSlug}/admin`);
+                } else {
+                    router.push('/');
+                }
+
+                router.refresh();
+            }
+        } catch (err) {
+            setError("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -41,6 +76,11 @@ export default function LoginPage() {
                 </div>
 
                 <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-gray-100/50">
+                    {error && (
+                        <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 text-center">
+                            <p className="text-sm font-bold text-red-600">{error}</p>
+                        </div>
+                    )}
                     <form onSubmit={handleLogin} className="space-y-5">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-1.5">อีเมล</label>
@@ -83,16 +123,19 @@ export default function LoginPage() {
                                 </div>
                                 <span className="text-sm font-bold text-gray-600 select-none group-hover:text-gray-900">จดจำฉันไว้</span>
                             </label>
-                            <Link href="#" className="text-sm font-bold text-brand-orange hover:text-orange-600 hover:underline">
+                            <Link href="/forgot-password" className="text-sm font-bold text-brand-orange hover:text-orange-600 hover:underline">
                                 ลืมรหัสผ่าน?
                             </Link>
                         </div>
 
                         <button
                             type="submit"
-                            className="w-full mt-2 rounded-2xl bg-brand-orange px-6 py-4 text-sm font-black text-white shadow-[0_10px_30px_rgba(255,107,0,0.3)] hover:shadow-[0_20px_40px_rgba(255,107,0,0.4)] transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
+                            disabled={isLoading}
+                            className="w-full mt-2 rounded-2xl bg-brand-orange px-6 py-4 text-sm font-black text-white shadow-[0_10px_30px_rgba(255,107,0,0.3)] hover:shadow-[0_20px_40px_rgba(255,107,0,0.4)] transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:translate-y-0"
                         >
-                            เข้าสู่ระบบ <LogIn className="h-5 w-5 transition-transform group-hover:scale-110" />
+                            {isLoading ? "กำลังเข้าสู่ระบบ..." : (
+                                <>เข้าสู่ระบบ <LogIn className="h-5 w-5 transition-transform group-hover:scale-110" /></>
+                            )}
                         </button>
                     </form>
 

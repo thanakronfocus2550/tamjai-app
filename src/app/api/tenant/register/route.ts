@@ -53,7 +53,7 @@ export async function POST(req: Request) {
                     create: {
                         name: shopName,
                         slug: shopSlug,
-                        isActive: true, // Auto-approve for now
+                        isActive: false, // Require Superadmin approval for 7-day free trial
                         themeConfig: {
                             primaryColor: "#FF6B00",
                         },
@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         const tenant = user.tenant!;
 
         return NextResponse.json(
-            { message: "ลงทะเบียนร้านค้าสำเร็จ", shopSlug: tenant.slug },
+            { message: "ลงทะเบียนสำเร็จ กรุณารอผู้ดูแลระบบอนุมัติเปิดร้าน (เวอร์ชันทดลอง 7 วัน)", shopSlug: tenant.slug },
             { status: 201 }
         );
     } catch (error) {

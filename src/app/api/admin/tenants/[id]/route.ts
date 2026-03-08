@@ -33,3 +33,27 @@ export async function PATCH(
         return NextResponse.json({ error: err.message || "Failed to update tenant" }, { status: 500 });
     }
 }
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session || session.user.role !== "SUPER_ADMIN") {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { id } = await params;
+
+        // Delete the tenant (Cascade should ideally handle related users, but if not we can delete dependencies or let prisma handle it based on schema)
+        await prisma.tenant.delete({
+            where: { id }
+        });
+
+        return NextResponse.json({ success: true });
+    } catch (err: any) {
+        console.error("Delete tenant error:", err);
+        return NextResponse.json({ error: err.message || "Failed to delete tenant" }, { status: 500 });
+    }
+}

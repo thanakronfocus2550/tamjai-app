@@ -30,15 +30,28 @@ function ContactForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
 
-        // Simulate API call to submit ticket to Superadmin Helpdesk
-        setTimeout(() => {
+        try {
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+
+            if (res.ok) {
+                setIsSuccess(true);
+            } else {
+                alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง");
+        } finally {
             setIsSubmitting(false);
-            setIsSuccess(true);
-        }, 1500);
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {

@@ -25,17 +25,6 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Missing credentials");
                 }
 
-                // Temporary hardcoded bypass for Superadmin login on empty DB
-                if (credentials.email === "admin@tamjai.pro" && credentials.password === "tamjaipro2024") {
-                    return {
-                        id: "superadmin-mock-id",
-                        email: "admin@tamjai.pro",
-                        name: "Super Admin",
-                        role: "SUPER_ADMIN",
-                        tenantId: null,
-                    };
-                }
-
                 const user = await prisma.user.findUnique({
                     where: { email: credentials.email },
                     include: { tenant: true },
