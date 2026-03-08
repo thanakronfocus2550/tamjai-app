@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Store, Clock, CheckCircle2, AlertCircle, ArrowLeft, Copy, Check } from "lucide-react";
+import { Search, Store, Clock, CheckCircle2, AlertCircle, ArrowLeft, Copy, Check, ArrowRight } from "lucide-react";
 
 export default function TrackStatusPage() {
     const [refCode, setRefCode] = useState("");
@@ -148,14 +148,33 @@ export default function TrackStatusPage() {
 
                                                 <div className="w-0.5 h-6 bg-gray-100 ml-4"></div>
 
-                                                <div className="flex items-center gap-4 opacity-40 grayscale">
-                                                    <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-8 w-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
                                                         <CheckCircle2 className="h-5 w-5" />
                                                     </div>
                                                     <div className="flex-1">
                                                         <p className="font-bold text-gray-900 text-sm">อนุมัติการเปิดร้าน</p>
+                                                        <p className="text-xs font-medium text-emerald-600">ยินดีด้วย! ร้านของคุณพร้อมใช้งานแล้ว</p>
                                                     </div>
                                                 </div>
+
+                                                {result.status === 'approved' && result.shopSlug && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        className="pt-4"
+                                                    >
+                                                        <Link
+                                                            href={`/menu/${result.shopSlug}/admin/login`}
+                                                            className="w-full flex items-center justify-center gap-2 rounded-2xl bg-gray-900 px-6 py-4 text-sm font-black text-white shadow-xl hover:bg-black transition-all hover:-translate-y-0.5"
+                                                        >
+                                                            เข้าจัดการร้านค้า (Login) <ArrowRight className="h-4 w-4" />
+                                                        </Link>
+                                                        <p className="text-[10px] text-center text-gray-400 mt-3 font-medium">
+                                                            URL ร้านของคุณ: <span className="text-brand-orange">tamjai.pro/menu/{result.shopSlug}</span>
+                                                        </p>
+                                                    </motion.div>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="space-y-6">
