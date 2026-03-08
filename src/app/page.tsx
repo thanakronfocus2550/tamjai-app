@@ -298,23 +298,8 @@ export default function Home() {
             </Link>
           ))}
           <Link href="/contact" className="text-sm font-bold text-gray-500 hover:text-brand-orange transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
-          <div className="hidden md:block h-5 w-px bg-gray-200"></div>
           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-100 items-center">
-            <Link
-              href="/menu/demo-shop"
-              className="flex items-center justify-center gap-2 group text-xs font-black uppercase tracking-wider text-brand-orange bg-orange-50 px-4 py-2 rounded-full border border-orange-200 hover:bg-brand-orange hover:text-white transition-all shadow-sm"
-            >
-              <Smartphone className="h-3.5 w-3.5" /> Demo
-            </Link>
             <Link href="/track" className="flex items-center justify-center text-xs font-bold text-gray-400 hover:text-brand-orange transition-colors">เช็คสถานะ / ต่ออายุ</Link>
-            <div className="hidden md:block h-3 w-px bg-gray-200"></div>
-            {session && session.user.role !== 'SUPER_ADMIN' ? (
-              <Link href={`/menu/${session.user.shopSlug || 'admin'}/admin`} className="flex items-center justify-center text-sm font-bold text-brand-orange hover:text-orange-600 transition-colors py-2 md:py-0">
-                {session.user.name || session.user.shopSlug || "Dashboard"}
-              </Link>
-            ) : (
-              <Link href="/login" className="flex items-center justify-center text-sm font-bold text-gray-600 hover:text-brand-orange transition-colors py-2 md:py-0">เข้าสู่ระบบ</Link>
-            )}
             <Link
               href="/register"
               className="group relative inline-flex w-full md:w-auto items-center justify-center overflow-hidden rounded-full bg-brand-orange px-6 py-2.5 font-bold text-white shadow-xl shadow-orange-500/20 transition-transform hover:-translate-y-0.5 hover:shadow-orange-500/40 active:scale-95 border border-orange-500"
@@ -518,37 +503,6 @@ export default function Home() {
                   >
                     🛒 ลองดูหน้าร้านลูกค้า <ArrowRight className="h-4 w-4" />
                   </Link>
-                  <Link
-                    href="/menu/demo-shop/admin/login"
-                    target="_blank"
-                    className="inline-flex items-center gap-2 rounded-full border-2 border-brand-orange text-brand-orange px-8 py-4 font-bold hover:bg-orange-50 transition-all hover:-translate-y-1"
-                  >
-                    🛠️ ลองดู Admin หลังร้าน
-                  </Link>
-                </div>
-
-                {/* Demo Credentials Card */}
-                <div className="bg-gray-900 rounded-2xl p-5 max-w-sm">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Demo Login Credentials</span>
-                  </div>
-                  <div className="space-y-2.5">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-gray-800 rounded-xl px-3 py-2.5">
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">URL Admin</p>
-                        <p className="font-mono text-xs text-brand-orange font-bold mt-0.5 truncate">/menu/demo-shop/admin</p>
-                      </div>
-                      <div className="bg-gray-800 rounded-xl px-3 py-2.5">
-                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Password</p>
-                        <p className="font-mono text-sm text-white font-black mt-0.5">admin1234</p>
-                      </div>
-                    </div>
-                    <div className="bg-gray-800 rounded-xl px-3 py-2.5">
-                      <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Email</p>
-                      <p className="font-mono text-sm text-white font-black mt-0.5">admin@demo-shop.com</p>
-                    </div>
-                  </div>
                 </div>
               </motion.div>
 
