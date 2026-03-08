@@ -16,6 +16,13 @@ export async function GET() {
             stack: err.stack,
             code: err.code
         });
-        return NextResponse.json({ error: "Failed to load FAQs", debug: err.message }, { status: 500 });
+        return NextResponse.json(
+            {
+                error: "Failed to load FAQs",
+                details: err.message,
+                code: err.code
+            },
+            { status: 500 }
+        );
     }
 }

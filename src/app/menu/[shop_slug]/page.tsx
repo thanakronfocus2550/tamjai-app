@@ -188,15 +188,18 @@ function AddonsModal({
 
 // ─── Main Page ──────────────────────────────────────────
 export default function MenuPage({ params, searchParams }: {
-    params: Promise<{ shop_slug: string }>;
-    searchParams: Promise<{ table?: string }>;
+    params: Promise<{ shop_slug: string }> | { shop_slug: string };
+    searchParams: Promise<{ table?: string }> | { table?: string };
 }) {
-    const { shop_slug } = use(params);
-    const { table } = use(searchParams);
+    // Robustly handle params (Next 14 vs 15)
+    // @ts-ignore
+    const { shop_slug } = params instanceof Promise ? use(params) : params;
+    // @ts-ignore
+    const { table } = searchParams instanceof Promise ? use(searchParams) : searchParams;
 
     const storeName = shop_slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    const isOpen = isStoreOpen();
-    const tableNumber = table ? parseInt(table) : null;
+
+    const tableNumber = table ? parseInt(table as string) : null;
 
     const { cart, addToCart: addToCartCtx, cartTotal, cartCount } = useCart();
 
@@ -207,6 +210,14 @@ export default function MenuPage({ params, searchParams }: {
     const [categories, setCategories] = useState<Category[]>([]);
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isOpen, setIsOpen] = useState(true); // Default to true, update on client
+    const [mounted, setMounted] = useState(false);
+
+    // Initial check on mount
+    useEffect(() => {
+        setMounted(true);
+        setIsOpen(isStoreOpen());
+    }, []);
 
     const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const contentRef = useRef<HTMLDivElement>(null);

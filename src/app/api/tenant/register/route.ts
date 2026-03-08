@@ -79,7 +79,9 @@ export async function POST(req: Request) {
         return NextResponse.json(
             {
                 message: "เกิดข้อผิดพลาดในการลงทะเบียน โปรดลองอีกครั้ง",
-                debug: error.message // Temporarily show error message to help debugging
+                error: error.message,
+                code: error.code,
+                meta: error.meta
             },
             { status: 500 }
         );

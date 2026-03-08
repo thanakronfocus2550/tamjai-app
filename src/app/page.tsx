@@ -59,12 +59,12 @@ function FaqSection() {
   const [faqs, setFaqs] = useState(STATIC_FAQS);
 
   // Try to load from API, fall back to static if fails
-  useState(() => {
+  useEffect(() => {
     fetch("/api/faq")
       .then(r => r.json())
       .then(data => { if (Array.isArray(data) && data.length > 0) setFaqs(data); })
       .catch(() => { });
-  });
+  }, []);
 
   return (
     <section id="faq" className="py-24 lg:py-32 bg-white border-t border-gray-100 scroll-mt-20">
