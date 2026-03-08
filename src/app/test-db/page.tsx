@@ -19,9 +19,12 @@ export default async function TestDbPage() {
             </div>
         );
     } catch (error: any) {
+        const url = process.env.DATABASE_URL || "";
+        const urlPrefix = url.substring(0, 10);
         return (
             <div style={{ padding: '20px', fontFamily: 'monospace' }}>
                 <h1 style={{ color: 'red' }}>❌ Database Connection Failed</h1>
+                <p>URL Prefix: <code>{urlPrefix}</code> (Check for hidden spaces or quotes)</p>
                 <pre>{JSON.stringify({
                     message: error.message,
                     code: error.code,
