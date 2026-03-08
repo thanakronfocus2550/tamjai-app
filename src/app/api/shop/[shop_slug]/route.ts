@@ -16,6 +16,7 @@ export async function GET(
                 slug: true,
                 themeColor: true,
                 logoUrl: true,
+                isActive: true,
             },
         });
 
