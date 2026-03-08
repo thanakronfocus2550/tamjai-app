@@ -28,10 +28,28 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   const userName = session?.user?.name || "Super Admin";
   const userEmail = session?.user?.email || "admin@tamjai.pro";
+
+  React.useEffect(() => {
+    if (status === "loading") return;
+
+    if (pathname === "/admin/login") {
+      // If already logged in as super admin, redirect to admin dashboard
+      if (status === "authenticated" && session?.user?.role === "SUPER_ADMIN") {
+        router.replace("/admin");
+      }
+      return;
+    }
+
+    if (status === "unauthenticated") {
+      router.replace("/admin/login");
+    } else if (status === "authenticated" && session?.user?.role !== "SUPER_ADMIN") {
+      router.replace("/");
+    }
+  }, [status, session, router, pathname]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", {
@@ -47,6 +65,18 @@ export default function AdminLayout({
     if (path !== "/admin" && pathname.startsWith(path)) return true;
     return false;
   };
+
+  if (status === "loading") {
+    return <div className="min-h-screen flex items-center justify-center bg-[#F8F9FA] text-brand-orange font-bold">กำลังโหลดข้อมูล...</div>;
+  }
+
+  if (pathname === "/admin/login") {
+    return <>{children}</>;
+  }
+
+  if (status === "unauthenticated" || session?.user?.role !== "SUPER_ADMIN") {
+    return null; // Don't render layout content if not authorized
+  }
 
   return (
     <div className="flex min-h-screen bg-[#F8F9FA] text-gray-900 font-sans selection:bg-brand-orange/20 selection:text-brand-orange">

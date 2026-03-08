@@ -4,7 +4,7 @@ import React, { use } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, UtensilsCrossed, Settings, ExternalLink, ChevronLeft, LogOut } from "lucide-react";
-
+import { useSession } from "next-auth/react";
 
 export default function StoreAdminLayout({
     children,
@@ -17,6 +17,28 @@ export default function StoreAdminLayout({
     const storeName = shop_slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
     const pathname = usePathname();
     const router = useRouter();
+    const { data: session, status } = useSession();
+
+    React.useEffect(() => {
+        if (status === "loading") return;
+
+        const isLoginPage = pathname.endsWith('/admin/login');
+
+        if (isLoginPage) {
+            if (status === "authenticated" && (session?.user?.role === "TENANT_ADMIN" || session?.user?.role === "SUPER_ADMIN")) {
+                router.replace(`/menu/${shop_slug}/admin`);
+            }
+            return;
+        }
+
+        if (status === "unauthenticated") {
+            router.replace(`/menu/${shop_slug}/admin/login`);
+        } else if (status === "authenticated") {
+            if (session?.user?.role !== "TENANT_ADMIN" && session?.user?.role !== "SUPER_ADMIN") {
+                router.replace("/");
+            }
+        }
+    }, [status, session, router, pathname, shop_slug]);
 
     const handleLogout = async () => {
         await fetch("/api/auth/logout", {
@@ -35,6 +57,18 @@ export default function StoreAdminLayout({
 
     const isActive = (href: string, exact?: boolean) =>
         exact ? pathname === href : pathname.startsWith(href);
+
+    if (status === "loading") {
+        return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-orange-500">กำลังโหลด...</div>;
+    }
+
+    if (pathname.endsWith('/admin/login')) {
+        return <>{children}</>;
+    }
+
+    if (status === "unauthenticated" || (session?.user?.role !== "TENANT_ADMIN" && session?.user?.role !== "SUPER_ADMIN")) {
+        return null;
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">

@@ -69,10 +69,18 @@ export async function POST(req: Request) {
             { message: "ลงทะเบียนสำเร็จ กรุณารอผู้ดูแลระบบอนุมัติเปิดร้าน (เวอร์ชันทดลอง 7 วัน)", shopSlug: tenant.slug },
             { status: 201 }
         );
-    } catch (error) {
-        console.error("Registration error:", error);
+    } catch (error: any) {
+        console.error("FULL REGISTRATION ERROR:", {
+            message: error.message,
+            stack: error.stack,
+            code: error.code,
+            meta: error.meta
+        });
         return NextResponse.json(
-            { message: "เกิดข้อผิดพลาดในการลงทะเบียน โปรดลองอีกครั้ง" },
+            {
+                message: "เกิดข้อผิดพลาดในการลงทะเบียน โปรดลองอีกครั้ง",
+                debug: error.message // Temporarily show error message to help debugging
+            },
             { status: 500 }
         );
     }
