@@ -386,7 +386,7 @@ export default function RegisterPage() {
                                         )}
 
                                         <label className={`block relative p-4 rounded-2xl border-2 transition-all cursor-pointer ${formData.plan === 'pro' ? 'border-brand-orange bg-orange-50/50' : 'border-gray-200 bg-white hover:border-brand-orange/30'}`}>
-                                            <input type="radio" name="plan" value="pro" checked={formData.plan === 'pro'} onChange={() => updateForm('pro', 'pro')} className="absolute opacity-0" />
+                                            <input type="radio" name="plan" value="pro" checked={formData.plan === 'pro'} onChange={() => updateForm('plan', 'pro')} className="absolute opacity-0" />
                                             <div className="flex items-start justify-between">
                                                 <div>
                                                     <p className="font-black text-gray-900">Tamjai Pro (450฿/เดือน)</p>
@@ -410,7 +410,12 @@ export default function RegisterPage() {
                                                             </div>
                                                         </div>
                                                         <div className="mt-3 p-2 bg-orange-50 rounded-lg text-center">
-                                                            <p className="text-[10px] font-bold text-brand-orange uppercase">ยอดโอน: 450.00 บาท</p>
+                                                            <p className="text-[10px] font-bold text-brand-orange uppercase">
+                                                                ยอดโอน: {formData.couponCode === 'TAMJAI100' ? '350.00' : '450.00'} บาท
+                                                            </p>
+                                                            {formData.couponCode === 'TAMJAI100' && (
+                                                                <p className="text-[9px] text-emerald-600 font-bold mt-0.5">(ส่วนลดจากโค้ด -100฿)</p>
+                                                            )}
                                                         </div>
                                                     </div>
 

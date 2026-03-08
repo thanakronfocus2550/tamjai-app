@@ -41,7 +41,8 @@ export async function GET(
             status,
             storeName: tenant.name,
             submittedAt: new Date(tenant.createdAt).toLocaleString('th-TH', {
-                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+                timeZone: 'Asia/Bangkok'
             }) + " น.",
             message,
             shopSlug: tenant.slug

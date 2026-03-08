@@ -148,13 +148,13 @@ export default function TrackStatusPage() {
 
                                                 <div className="w-0.5 h-6 bg-gray-100 ml-4"></div>
 
-                                                <div className="flex items-center gap-4">
-                                                    <div className="h-8 w-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
+                                                <div className={`flex items-center gap-4 ${result.status !== 'approved' ? 'opacity-40 grayscale' : ''}`}>
+                                                    <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${result.status === 'approved' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-gray-200 text-gray-400'}`}>
                                                         <CheckCircle2 className="h-5 w-5" />
                                                     </div>
                                                     <div className="flex-1">
                                                         <p className="font-bold text-gray-900 text-sm">อนุมัติการเปิดร้าน</p>
-                                                        <p className="text-xs font-medium text-emerald-600">ยินดีด้วย! ร้านของคุณพร้อมใช้งานแล้ว</p>
+                                                        {result.status === 'approved' && <p className="text-xs font-medium text-emerald-600">ยินดีด้วย! ร้านของคุณพร้อมใช้งานแล้ว</p>}
                                                     </div>
                                                 </div>
 
