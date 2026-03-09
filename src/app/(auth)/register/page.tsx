@@ -38,10 +38,36 @@ export default function RegisterPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
     const [slipFileName, setSlipFileName] = useState("");
+    const [slipBase64, setSlipBase64] = useState("");
+    const [paymentConfig, setPaymentConfig] = useState({ bankName: "", accountNo: "", accountName: "" });
+
+    // Fetch config on mount
+    React.useEffect(() => {
+        const fetchConfig = async () => {
+            try {
+                const res = await fetch("/api/config/payment");
+                if (res.ok) {
+                    const data = await res.json();
+                    setPaymentConfig(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch payment config:", error);
+            }
+        };
+        fetchConfig();
+    }, []);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setSlipFileName(e.target.files[0].name);
+            const file = e.target.files[0];
+            setSlipFileName(file.name);
+
+            // Read file as Base64
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                setSlipBase64(reader.result as string);
+            };
         }
     };
 
@@ -68,6 +94,8 @@ export default function RegisterPage() {
                     email: formData.email,
                     password: formData.password,
                     couponCode: formData.couponCode,
+                    plan: formData.plan,
+                    slipBase64: formData.plan === 'pro' ? slipBase64 : undefined,
                 }),
             });
 
@@ -403,10 +431,10 @@ export default function RegisterPage() {
                                                     <div className="bg-white rounded-xl p-4 border border-orange-100 shadow-sm">
                                                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">ช่องทางชำระเงิน</p>
                                                         <div className="flex items-center gap-3">
-                                                            <div className="h-10 w-10 rounded-lg bg-green-600 flex items-center justify-center shrink-0 text-white font-bold text-xs">K-BANK</div>
+                                                            <div className="h-10 w-10 rounded-lg bg-green-600 flex items-center justify-center shrink-0 text-white font-bold text-xs p-1 text-center leading-tight">ชำระเงิน</div>
                                                             <div>
-                                                                <p className="text-sm font-bold text-gray-900">ธนาคารกสิกรไทย</p>
-                                                                <p className="text-xs font-medium text-gray-500">012-3-45678-9 (บจก. ตามใจ โปร)</p>
+                                                                <p className="text-sm font-bold text-gray-900">{paymentConfig.bankName || "กำลังโหลด..."}</p>
+                                                                <p className="text-xs font-medium text-gray-500">{paymentConfig.accountNo} ({paymentConfig.accountName})</p>
                                                             </div>
                                                         </div>
                                                         <div className="mt-3 p-2 bg-orange-50 rounded-lg text-center">

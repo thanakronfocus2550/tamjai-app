@@ -25,6 +25,7 @@ export default function TenantsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<any>(null);
+    const [activeTab, setActiveTab] = useState<"ALL" | "PRO" | "FREE">("ALL");
 
     // Form states
     const [formData, setFormData] = useState({
@@ -109,11 +110,14 @@ export default function TenantsPage() {
         }
     };
 
-    const filteredTenants = tenants.filter(t =>
-        t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.owner.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredTenants = tenants.filter(t => {
+        const matchesSearch = t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t.owner.toLowerCase().includes(searchQuery.toLowerCase());
+
+        if (activeTab === "ALL") return matchesSearch;
+        return matchesSearch && t.package === activeTab;
+    });
 
     const handleManage = (slug: string) => {
         // Redirect to the tenant's internal settings or dashboard
@@ -257,10 +261,22 @@ export default function TenantsPage() {
                     </div>
                     <div className="flex gap-3">
                         <button
-                            onClick={handleFilter}
-                            className="flex items-center gap-2 rounded-xl bg-white border border-gray-200 px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors shadow-sm"
+                            onClick={() => setActiveTab("ALL")}
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-colors shadow-sm ${activeTab === 'ALL' ? 'bg-gray-900 border-gray-900 text-white' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                         >
-                            <Filter className="h-4 w-4" /> ตัวกรอง
+                            ทั้งหมด
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("PRO")}
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-colors shadow-sm ${activeTab === 'PRO' ? 'bg-orange-50 border-brand-orange text-brand-orange' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Crown className="h-4 w-4" /> PRO
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("FREE")}
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-colors shadow-sm ${activeTab === 'FREE' ? 'bg-amber-50 border-amber-500 text-amber-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Store className="h-4 w-4" /> FREE
                         </button>
                         <button
                             onClick={handleExport}
@@ -304,11 +320,9 @@ export default function TenantsPage() {
                                                     {t.package === 'PRO' && <Crown className="h-3 w-3" />}
                                                     {t.package}
                                                 </span>
-                                                {t.package === 'FREE' && (
-                                                    <span className="text-[9px] font-bold text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 sm:static sm:translate-y-0">
-                                                        หมดอายุ: {new Date(new Date(t.joined).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}
-                                                    </span>
-                                                )}
+                                                <span className="text-[9px] font-bold text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 sm:static sm:translate-y-0">
+                                                    หมดอายุ: {new Date(new Date(t.joined).getTime() + (t.package === 'PRO' ? 365 : 7) * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                                                </span>
                                             </div>
                                             <div className="flex items-center gap-1.5">
                                                 <span className={`h-2 w-2 rounded-full ${t.status === 'Active' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
@@ -321,25 +335,23 @@ export default function TenantsPage() {
                                     </td>
                                     <td className="px-6 py-4 rounded-r-2xl text-right border-b border-t border-r border-gray-100 group-hover:border-gray-200 transition-colors">
                                         <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setViewingTenant(t);
+                                                    setIsViewModalOpen(true);
+                                                }}
+                                                className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95"
+                                            >
+                                                ดูข้อมูล
+                                            </button>
                                             {t.status === 'Inactive' && (
-                                                <>
-                                                    <button
-                                                        onClick={() => {
-                                                            setViewingTenant(t);
-                                                            setIsViewModalOpen(true);
-                                                        }}
-                                                        className="px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95"
-                                                    >
-                                                        ดูข้อมูล
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleApprove(t)}
-                                                        disabled={isSubmitting}
-                                                        className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95 disabled:opacity-50"
-                                                    >
-                                                        Approve
-                                                    </button>
-                                                </>
+                                                <button
+                                                    onClick={() => handleApprove(t)}
+                                                    disabled={isSubmitting}
+                                                    className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95 disabled:opacity-50"
+                                                >
+                                                    Approve
+                                                </button>
                                             )}
                                             <button
                                                 onClick={() => handleEditClick(t)}

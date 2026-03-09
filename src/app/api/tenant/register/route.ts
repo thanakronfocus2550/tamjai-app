@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, shopName, shopSlug, email, password } = body;
+        const { name, shopName, shopSlug, email, password, plan, slipBase64, couponCode } = body;
 
         // Basic validation
         if (!name || !shopName || !shopSlug || !email || !password) {
@@ -64,6 +64,7 @@ export async function POST(req: Request) {
                     create: {
                         name: shopName,
                         slug: shopSlug,
+                        plan: plan === 'pro' ? 'PRO' : 'FREE',
                         refCode, // Save the generated code
                         isActive: false, // Require Superadmin approval for 7-day free trial
                         themeConfig: {
@@ -76,6 +77,46 @@ export async function POST(req: Request) {
         }) as any;
 
         const tenant = user.tenant!;
+
+        // Handle slip upload for PRO plan
+        if (plan === 'pro' && slipBase64) {
+            try {
+                // Ensure the uploads directory exists
+                const fs = require('fs');
+                const path = require('path');
+                const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'slips');
+                if (!fs.existsSync(uploadDir)) {
+                    fs.mkdirSync(uploadDir, { recursive: true });
+                }
+
+                // Extract base64 data
+                const matches = slipBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+                if (matches && matches.length === 3) {
+                    const fileExtension = matches[1] === 'image/png' ? 'png' : 'jpg';
+                    const buffer = Buffer.from(matches[2], 'base64');
+                    const fileName = `slip-${tenant.id}-${Date.now()}.${fileExtension}`;
+                    const filePath = path.join(uploadDir, fileName);
+
+                    fs.writeFileSync(filePath, buffer);
+                    const fileUrl = `/uploads/slips/${fileName}`;
+
+                    // Create PaymentApproval record
+                    await prisma.paymentApproval.create({
+                        data: {
+                            refId: `PAY-${Date.now()}`,
+                            tenantId: tenant.id,
+                            plan: 'PRO',
+                            amount: couponCode === 'TAMJAI100' ? 350 : 450,
+                            bank: `โอนเข้าแพลตฟอร์ม`,
+                            status: 'PENDING',
+                            slipUrl: fileUrl,
+                        }
+                    });
+                }
+            } catch (fsError) {
+                console.error("Error saving slip:", fsError);
+            }
+        }
 
         return NextResponse.json(
             {
