@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
                 _count: { id: true }
             }) : { _sum: { usageCount: 0 }, _count: { id: 0 } },
             // @ts-ignore
-            prisma.helpdeskTicket ? prisma.helpdeskTicket.findMany({
-                where: { status: "OPEN" },
+            prisma.mascotTicket ? prisma.mascotTicket.findMany({
+                where: { status: "PENDING" },
                 take: 3,
                 orderBy: { createdAt: "desc" }
             }) : [],

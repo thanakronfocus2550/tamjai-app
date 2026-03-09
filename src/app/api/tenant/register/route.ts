@@ -121,7 +121,7 @@ export async function POST(req: Request) {
                     // AI Auto-Verification
                     if (process.env.GEMINI_API_KEY) {
                         try {
-                            const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
+                            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                             const prompt = `Analyze this Thai bank transfer slip. Output JSON ONLY: { "amount": number, "date": "DD/MM/YYYY", "time": "HH:mm", "bank": "string", "isSlip": boolean, "confidence": number }`;
 
                             const imagePart = {

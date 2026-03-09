@@ -20,7 +20,7 @@ export async function POST(req: Request) {
         }
 
         // Initialize Gemini model
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // Build System Prompt
         const systemPrompt = `
