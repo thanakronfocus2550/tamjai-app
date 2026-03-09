@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { th } from "date-fns/locale/th";
 import { CheckCircle2, Clock, Inbox, RefreshCw, AlertTriangle } from "lucide-react";
 import { useSession } from "next-auth/react";
 
