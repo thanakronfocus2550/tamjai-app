@@ -944,10 +944,10 @@ export default function Home() {
           </div>
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-xs font-bold text-gray-400">© 2024 Tamjai SaaS Platform. All rights reserved.</p>
-            <div className="flex gap-4">
-              <Link href="#" className="text-xs font-bold text-gray-400 hover:text-gray-900">Privacy Policy</Link>
-              <Link href="#" className="text-xs font-bold text-gray-400 hover:text-gray-900">Terms of Service</Link>
-              <Link href="/contact" className="text-xs font-bold text-gray-400 hover:text-brand-orange">Contact Support</Link>
+            <div className="flex flex-wrap gap-4 justify-center md:justify-end">
+              <Link href="/privacy" className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors">Terms of Service</Link>
+              <Link href="/contact" className="text-xs font-bold text-gray-400 hover:text-brand-orange transition-colors">Contact Support</Link>
             </div>
           </div>
 

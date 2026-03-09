@@ -41,9 +41,11 @@ export async function POST(request: NextRequest) {
         const orderId = `TJP-${Date.now().toString().slice(-4)}`;
 
         // 2. Lookup Tenant & Check Status (Subscription Lock)
+        // @ts-ignore
         const tenant = await prisma.tenant.findUnique({
             where: { slug: body.shop_slug },
-            select: { id: true, isActive: true }
+            // @ts-ignore
+            select: { id: true, isActive: true, lineUserId: true }
         });
 
         if (!tenant) {
@@ -102,23 +104,15 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // 4. Build LINE message
-        const message = buildLineMessage(body, orderId);
-
-        // 5. Send to LINE Notify (only if token exists)
-        const lineToken = process.env.LINE_NOTIFY_TOKEN;
-        if (lineToken) {
-            await fetch("https://notify-api.line.me/api/notify", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${lineToken}`,
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams({ message }),
+        // 4. Send LINE Smart Notification (Flex Message)
+        // @ts-ignore
+        if (tenant.lineUserId) {
+            const { sendLineFlexMessage } = await import("@/lib/line-utils");
+            // @ts-ignore
+            await sendLineFlexMessage(tenant.lineUserId, {
+                ...body,
+                orderId,
             });
-        } else {
-            // Dev mode: just log
-            console.log("[LINE Notify - DEV MODE]", message);
         }
 
         return NextResponse.json({ success: true, orderId: (savedOrder as any).orderId }, { status: 201 });

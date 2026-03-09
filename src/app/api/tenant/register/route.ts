@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import fs from "fs";
+import path from "path";
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(req: Request) {
     try {
@@ -101,7 +106,7 @@ export async function POST(req: Request) {
                     const fileUrl = `/uploads/slips/${fileName}`;
 
                     // Create PaymentApproval record
-                    await prisma.paymentApproval.create({
+                    const paymentApproval = await (prisma as any).paymentApproval.create({
                         data: {
                             refId: `PAY-${Date.now()}`,
                             tenantId: tenant.id,
@@ -112,6 +117,35 @@ export async function POST(req: Request) {
                             slipUrl: fileUrl,
                         }
                     });
+
+                    // AI Auto-Verification
+                    if (process.env.GEMINI_API_KEY) {
+                        try {
+                            const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
+                            const prompt = `Analyze this Thai bank transfer slip. Output JSON ONLY: { "amount": number, "date": "DD/MM/YYYY", "time": "HH:mm", "bank": "string", "isSlip": boolean, "confidence": number }`;
+
+                            const imagePart = {
+                                inlineData: {
+                                    data: Buffer.from(fs.readFileSync(filePath)).toString("base64"),
+                                    mimeType: fileExtension === 'png' ? 'image/png' : 'image/jpeg'
+                                },
+                            };
+
+                            const result = await model.generateContent([prompt, imagePart]);
+                            const response = await result.response;
+                            const text = response.text().trim();
+                            const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+                            const analysis = JSON.parse(jsonStr);
+
+                            // Update the record with AI results
+                            await (prisma as any).paymentApproval.update({
+                                where: { id: paymentApproval.id },
+                                data: { aiAnalysis: analysis }
+                            });
+                        } catch (aiError) {
+                            console.error("AI Auto-verification failed:", aiError);
+                        }
+                    }
                 }
             } catch (fsError) {
                 console.error("Error saving slip:", fsError);

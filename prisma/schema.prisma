@@ -34,6 +34,15 @@ model Tenant {
   themeColor    String    @default("#FF6B00")
   themeConfig   Json?     // { primaryColor: string, darkMode: boolean, etc }
   isActive      Boolean   @default(true)
+  lineUserId    String?   // LINE User ID for Messaging API
+  phone         String?
+  address       String?
+  openTime      String    @default("09:00")
+  closeTime     String    @default("21:00")
+  bankName      String    @default("กสิกรไทย (KBank)")
+  bankAccount   String?
+  deliveryEnabled Boolean @default(true)
+  pickupEnabled  Boolean  @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -157,8 +166,9 @@ model PaymentApproval {
   reason      String?  // Rejection reason
   processedBy String?  // Admin name
   processedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  aiAnalysis  Json?     // AI analysis result (amount, date, time, confidence, etc.)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model FaqItem {

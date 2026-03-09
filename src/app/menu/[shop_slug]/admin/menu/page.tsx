@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, use } from "react";
-import { Plus, Pencil, Eye, EyeOff, X, Check, ChevronDown, Trash2, Loader2, Save } from "lucide-react";
+import { Plus, Pencil, Eye, EyeOff, X, Check, ChevronDown, Trash2, Loader2, Save, Sparkles, Upload, Image as ImageIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Addon {
     name: string;
@@ -36,8 +37,16 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
     const [showAdd, setShowAdd] = useState(false);
     const [showCategoryMgr, setShowCategoryMgr] = useState(false);
 
-    const [newItem, setNewItem] = useState({ name: "", price: "", categoryId: "", imageUrl: "" });
+    const [newItem, setNewItem] = useState({ name: "", price: "", categoryId: "", imageUrl: "", description: "" });
+    const [isGenerating, setIsGenerating] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState("");
+
+    // Onboarding States
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [isOnboarding, setIsOnboarding] = useState(false);
+    const [onboardingItems, setOnboardingItems] = useState<any[]>([]);
+    const [onboardingStep, setOnboardingStep] = useState<'upload' | 'review'>('upload');
+    const [isSavingOnboarding, setIsSavingOnboarding] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -86,14 +95,14 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
         }
     };
 
-    const saveEdit = async (id: string, name: string, price: number) => {
-        setItems(prev => prev.map(i => i.id === id ? { ...i, name, price } : i));
+    const saveEdit = async (id: string, name: string, price: number, description?: string) => {
+        setItems(prev => prev.map(i => i.id === id ? { ...i, name, price, description } : i));
         setEditingId(null);
 
         try {
             await fetch(`/api/menu/${shop_slug}/products/${id}`, {
                 method: "PATCH",
-                body: JSON.stringify({ name, price })
+                body: JSON.stringify({ name, price, description })
             });
         } catch (err) {
             console.error(err);
@@ -113,6 +122,119 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
         }
     };
 
+    const handleOnboarding = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsOnboarding(true);
+        setShowOnboarding(true);
+        setOnboardingStep('upload');
+
+        try {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const base64 = reader.result as string;
+                const res = await fetch("/api/ai/onboard-menu", {
+                    method: "POST",
+                    body: JSON.stringify({ image: base64 })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setOnboardingItems(data.items);
+                    setOnboardingStep('review');
+                } else {
+                    const err = await res.json();
+                    alert("ไม่สามารถสแกนเมนูได้: " + (err.message || "Unknown error"));
+                    setShowOnboarding(false);
+                }
+                setIsOnboarding(false);
+            };
+            reader.readAsDataURL(file);
+        } catch (err) {
+            console.error(err);
+            setIsOnboarding(false);
+            setShowOnboarding(false);
+        }
+    };
+
+    const saveOnboarding = async () => {
+        setIsSavingOnboarding(true);
+        try {
+            const catsToCreate = Array.from(new Set(onboardingItems.map(i => i.category)));
+            const catMap: Record<string, string> = {};
+
+            for (const catName of catsToCreate) {
+                let existingCat = categories.find(c => c.name === catName);
+                if (!existingCat) {
+                    const res = await fetch(`/api/menu/${shop_slug}/categories`, {
+                        method: "POST",
+                        body: JSON.stringify({ name: catName, order: categories.length })
+                    });
+                    if (res.ok) {
+                        const newCat = await res.json();
+                        existingCat = newCat;
+                    }
+                }
+                if (existingCat) {
+                    catMap[catName] = existingCat.id;
+                }
+            }
+
+            for (const item of onboardingItems) {
+                const categoryId = catMap[item.category] || categories[0]?.id;
+                if (!categoryId) continue;
+
+                await fetch(`/api/menu/${shop_slug}/products`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                        name: item.name,
+                        price: Number(item.price),
+                        description: item.description,
+                        categoryId,
+                        isAvailable: true,
+                        addons: []
+                    })
+                });
+            }
+
+            await fetchData();
+            setShowOnboarding(false);
+            setOnboardingItems([]);
+        } catch (err) {
+            console.error(err);
+            alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        } finally {
+            setIsSavingOnboarding(false);
+        }
+    };
+
+    const generateDescription = async (name: string, categoryId: string, target: 'new' | 'edit') => {
+        if (!name) {
+            alert("กรุณาระบุชื่อเมนูก่อนค่ะ");
+            return;
+        }
+        setIsGenerating(true);
+        try {
+            const cat = categories.find(c => c.id === categoryId)?.name || "";
+            const res = await fetch("/api/ai/generate-menu", {
+                method: "POST",
+                body: JSON.stringify({ name, category: cat })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (target === 'new') {
+                    setNewItem(prev => ({ ...prev, description: data.description }));
+                } else {
+                    return data.description;
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const addItem = async () => {
         if (!newItem.name || !newItem.price || !newItem.categoryId) return;
 
@@ -129,7 +251,7 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
 
             if (res.ok) {
                 fetchData();
-                setNewItem({ name: "", price: "", categoryId: categories[0]?.id || "", imageUrl: "" });
+                setNewItem({ name: "", price: "", categoryId: categories[0]?.id || "", imageUrl: "", description: "" });
                 setShowAdd(false);
             }
         } catch (err) {
@@ -195,6 +317,12 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
                     </p>
                 </div>
                 <div className="flex gap-2">
+                    <label className="cursor-pointer">
+                        <input type="file" accept="image/*" onChange={handleOnboarding} className="hidden" />
+                        <div className="flex items-center gap-1.5 bg-indigo-50 text-indigo-600 text-[10px] font-black px-3 py-2 rounded-xl border border-indigo-100 hover:bg-indigo-100 transition-all">
+                            <Sparkles className="h-3 w-3" /> AI Onboarding
+                        </div>
+                    </label>
                     <button onClick={() => setShowCategoryMgr(!showCategoryMgr)}
                         className={`h-10 w-10 flex items-center justify-center rounded-xl transition-all border ${showCategoryMgr ? "bg-purple-50 border-purple-200 text-purple-600" : "bg-white border-gray-200 text-gray-500"}`}>
                         <ChevronDown className={`h-5 w-5 transition-transform ${showCategoryMgr ? "rotate-180" : ""}`} />
@@ -254,9 +382,30 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
                             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
+                    <div className="space-y-1.5 mt-2">
+                        <div className="flex justify-between items-center">
+                            <label className="text-[10px] font-black uppercase text-gray-400">คำอธิบาย</label>
+                            <button
+                                onClick={() => generateDescription(newItem.name, newItem.categoryId, 'new')}
+                                disabled={isGenerating || !newItem.name}
+                                className="text-[10px] font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-lg transition-all disabled:opacity-50"
+                            >
+                                {isGenerating ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : "✨ ใช้ AI แต่งคำอธิบาย"}
+                            </button>
+                        </div>
+                        <textarea
+                            placeholder="บรรยายเมนูนี้ให้น่าสนใจ..."
+                            value={newItem.description}
+                            onChange={e => setNewItem({ ...newItem, description: e.target.value })}
+                            rows={2}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-orange-400 resize-none bg-gray-50/50"
+                        />
+                    </div>
+
                     <input type="url" placeholder="URL รูปภาพ (ไม่บังคับ)" value={newItem.imageUrl}
                         onChange={e => setNewItem({ ...newItem, imageUrl: e.target.value })}
                         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-orange-400" />
+
                     <button onClick={addItem}
                         className="w-full bg-orange-500 text-white py-3 rounded-xl font-bold text-sm hover:bg-orange-600 transition-all">
                         บันทึก
@@ -278,7 +427,7 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
                         {/* Main row */}
                         {editingId === item.id ? (
                             <EditInline item={item}
-                                onSave={(n, p) => saveEdit(item.id, n, p)}
+                                onSave={(n, p, d) => saveEdit(item.id, n, p, d)}
                                 onCancel={() => setEditingId(null)} />
                         ) : (
                             <div className="flex items-center gap-3 p-2.5">
@@ -287,6 +436,7 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
                                 </div>
                                 <div className="flex-1 min-w-0 py-0.5">
                                     <p className="font-semibold text-gray-900 text-sm leading-snug truncate">{item.name}</p>
+                                    <p className="text-[10px] text-gray-400 line-clamp-1 italic">{item.description || "ไม่มีคำอธิบาย"}</p>
                                     <p className="text-xs text-gray-500">{categories.find(c => c.id === item.categoryId)?.name || "ไม่ระบุหมวด"}</p>
                                     <div className="flex items-center gap-2 mt-1">
                                         <p className="font-bold text-orange-500 text-sm">{"฿" + item.price}</p>
@@ -333,26 +483,165 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
                     </div>
                 ))}
             </div>
+
+            {/* AI Onboarding Modal */}
+            <AnimatePresence>
+                {showOnboarding && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-white w-full max-w-lg rounded-[2.5rem] overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+                        >
+                            <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-indigo-50/30">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-2xl bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-100">
+                                        <Sparkles className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-black text-gray-900 leading-tight">AI Menu Onboarding</h3>
+                                        <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">สร้างเมนูอัตโนมัติจากรูปภาพ</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => !isSavingOnboarding && setShowOnboarding(false)} className="h-10 w-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+                                    <X className="h-5 w-5 text-gray-400" />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                                {isOnboarding ? (
+                                    <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+                                        <div className="relative">
+                                            <div className="h-20 w-20 rounded-full border-4 border-indigo-100 border-t-indigo-500 animate-spin" />
+                                            <div className="absolute inset-0 flex items-center justify-center text-indigo-500">
+                                                <ImageIcon className="h-8 w-8" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-black text-gray-900">กำลังสกัดข้อมูลจากรูปภาพ...</p>
+                                            <p className="text-sm font-bold text-gray-400">น้องตามใจกำลังอ่านชื่อเมนูและราคาให้ค่ะ</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-sm font-black text-gray-500">พบทั้งหมด {onboardingItems.length} รายการ</p>
+                                            <p className="text-[10px] font-black text-orange-400 underline">ตรวจสอบความถูกต้องก่อนบันทึก</p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {onboardingItems.map((item, idx) => (
+                                                <div key={idx} className="p-4 rounded-3xl border border-gray-100 bg-gray-50/50 flex flex-col gap-1">
+                                                    <div className="flex justify-between items-start">
+                                                        <p className="font-black text-gray-900 text-sm">{item.name}</p>
+                                                        <input
+                                                            type="number"
+                                                            value={item.price}
+                                                            onChange={(e) => {
+                                                                const newItems = [...onboardingItems];
+                                                                newItems[idx].price = e.target.value;
+                                                                setOnboardingItems(newItems);
+                                                            }}
+                                                            className="w-16 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-black text-orange-500 text-right"
+                                                        />
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600">{item.category}</span>
+                                                        <p className="text-[10px] text-gray-400 font-bold truncate">{item.description}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {!isOnboarding && onboardingItems.length > 0 && (
+                                <div className="p-6 bg-gray-50 border-t border-gray-100">
+                                    <button
+                                        onClick={saveOnboarding}
+                                        disabled={isSavingOnboarding}
+                                        className="w-full bg-indigo-600 text-white py-4 rounded-[1.5rem] font-black shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSavingOnboarding ? (
+                                            <><Loader2 className="h-5 w-5 animate-spin" /> กำลังบันทึก...</>
+                                        ) : (
+                                            <><Save className="h-5 w-5" /> บันทึกทั้งหมด ({onboardingItems.length} รายการ)</>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
 
-function EditInline({ item, onSave, onCancel }: { item: MenuItem; onSave: (n: string, p: number) => void; onCancel: () => void }) {
+function EditInline({ item, onSave, onCancel }: { item: MenuItem; onSave: (n: string, p: number, d?: string) => void; onCancel: () => void }) {
     const [name, setName] = useState(item.name);
     const [price, setPrice] = useState(item.price.toString());
+    const [description, setDescription] = useState(item.description || "");
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        try {
+            const res = await fetch("/api/ai/generate-menu", {
+                method: "POST",
+                body: JSON.stringify({ name })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setDescription(data.description);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsGenerating(false);
+        }
+    }
+
     return (
-        <div className="p-3 space-y-2">
+        <div className="p-3 space-y-2 bg-orange-50/30">
             <input value={name} onChange={e => setName(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-orange-400" />
+                className="w-full border border-orange-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-orange-400" />
+
+            <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black uppercase text-gray-400">คำอธิบาย</span>
+                    <button
+                        onClick={handleGenerate}
+                        disabled={isGenerating || !name}
+                        className="text-[10px] font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 px-1 transition-all disabled:opacity-50"
+                    >
+                        {isGenerating ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : "✨ ใช้ AI แต่งคำ"}
+                    </button>
+                </div>
+                <textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    rows={2}
+                    className="w-full border border-orange-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-orange-400 resize-none bg-white/80"
+                />
+            </div>
+
             <div className="flex gap-2">
                 <input type="number" value={price} onChange={e => setPrice(e.target.value)} placeholder="ราคา"
-                    className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-orange-400" />
-                <button onClick={() => onSave(name, +price)}
+                    className="flex-1 border border-orange-100 rounded-xl px-3 py-2 text-sm text-gray-800 focus:outline-none focus:border-orange-400" />
+                <button onClick={() => onSave(name, +price, description)}
                     className="h-10 w-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center hover:bg-emerald-600">
                     <Check className="h-4 w-4" />
                 </button>
                 <button onClick={onCancel}
-                    className="h-10 w-10 bg-gray-100 text-gray-500 rounded-xl flex items-center justify-center hover:bg-gray-200">
+                    className="h-10 w-10 bg-white border border-gray-200 text-gray-400 rounded-xl flex items-center justify-center hover:bg-gray-100">
                     <X className="h-4 w-4" />
                 </button>
             </div>

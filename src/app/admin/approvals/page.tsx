@@ -19,7 +19,10 @@ import {
     Loader2,
     CheckSquare,
     Image as ImageIcon,
-    Info
+    Info,
+    Sparkles,
+    ShieldCheck,
+    ShieldAlert
 } from "lucide-react";
 
 export default function ApprovalsPage() {
@@ -167,6 +170,11 @@ export default function ApprovalsPage() {
                                         >
                                             <ImageIcon className="h-4 w-4" /> ดูสลิป (โอนจาก {ap.bank})
                                         </button>
+                                        {ap.aiAnalysis && (
+                                            <div className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 font-bold text-[10px] w-fit">
+                                                <Sparkles className="h-3 w-3" /> AI วิเคราะห์แล้ว
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
@@ -222,7 +230,7 @@ export default function ApprovalsPage() {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="relative w-full max-w-2xl bg-white rounded-[2.5rem] overflow-hidden shadow-2xl"
+                            className="relative w-full max-w-4xl bg-white rounded-[2.5rem] overflow-hidden shadow-2xl"
                         >
                             <div className="p-8">
                                 <div className="flex items-center justify-between mb-6">
@@ -235,10 +243,88 @@ export default function ApprovalsPage() {
                                     </button>
                                 </div>
 
-                                <div className="aspect-[3/4] rounded-3xl bg-gray-100 overflow-hidden relative group">
-                                    <img src={selectedApproval.slipUrl} alt="Slip" className="w-full h-full object-contain" />
-                                    <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-black text-gray-900 flex items-center gap-2">
-                                        <Info className="h-3 w-3" /> แตะเพื่อซูม
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[500px]">
+                                    <div className="rounded-3xl bg-gray-100 overflow-hidden relative group h-full">
+                                        <img src={selectedApproval.slipUrl} alt="Slip" className="w-full h-full object-contain" />
+                                        <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-black text-gray-900 flex items-center gap-2">
+                                            <Info className="h-3 w-3" /> แตะเพื่อซูม
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col gap-4">
+                                        <div className="p-6 rounded-[2rem] bg-indigo-50/50 border border-indigo-100">
+                                            <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                                <Sparkles className="h-3 w-3" /> AI Analysis Insight
+                                            </h4>
+
+                                            {selectedApproval.aiAnalysis ? (
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-gray-500">ยอดเงินที่อ่านได้:</span>
+                                                        <div className="text-right">
+                                                            <p className={`text-xl font-black ${Math.abs(parseFloat(selectedApproval.aiAnalysis.amount) - parseFloat(selectedApproval.amount)) < 1
+                                                                ? 'text-emerald-600' : 'text-red-500'
+                                                                }`}>
+                                                                ฿ {parseFloat(selectedApproval.aiAnalysis.amount).toLocaleString()}
+                                                            </p>
+                                                            {Math.abs(parseFloat(selectedApproval.aiAnalysis.amount) - parseFloat(selectedApproval.amount)) >= 1 && (
+                                                                <p className="text-[10px] font-bold text-red-400 mt-1 italic">
+                                                                    ไม่ตรงกับยอดที่แจ้ง (฿ {parseFloat(selectedApproval.amount).toLocaleString()})
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-gray-500">วัน/เวลา:</span>
+                                                        <p className="text-sm font-black text-gray-900">
+                                                            {selectedApproval.aiAnalysis.date} {selectedApproval.aiAnalysis.time}
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm font-bold text-gray-500">ธนาคารต้นทาง:</span>
+                                                        <p className="text-sm font-black text-gray-900">{selectedApproval.aiAnalysis.bank}</p>
+                                                    </div>
+
+                                                    <div className={`p-3 rounded-xl flex items-center gap-3 ${selectedApproval.aiAnalysis.isSlip ? 'bg-emerald-100/50 text-emerald-700' : 'bg-red-100/50 text-red-700'}`}>
+                                                        {selectedApproval.aiAnalysis.isSlip ? <ShieldCheck className="h-5 w-5" /> : <ShieldAlert className="h-5 w-5" />}
+                                                        <span className="text-xs font-black">
+                                                            {selectedApproval.aiAnalysis.isSlip ? 'ยืนยันว่าเป็นสลิปธนาคารจริง' : 'คำเตือน: อาจไม่ใช่รูปสลิปธนาคาร'}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="mt-2">
+                                                        <div className="flex justify-between items-center text-[10px] font-black text-gray-400 mb-1">
+                                                            <span>ความแม่นยำ (Confidence)</span>
+                                                            <span>{Math.round(selectedApproval.aiAnalysis.confidence * 100)}%</span>
+                                                        </div>
+                                                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                                                            <div
+                                                                className={`h-full transition-all ${selectedApproval.aiAnalysis.confidence > 0.8 ? 'bg-emerald-500' : 'bg-amber-500'}`}
+                                                                style={{ width: `${selectedApproval.aiAnalysis.confidence * 100}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center py-12 text-center">
+                                                    <Loader2 className="h-8 w-8 text-indigo-300 animate-spin mb-4" />
+                                                    <p className="text-sm font-bold text-gray-400">ยังไม่มีข้อมูลการวิเคราะห์<br />หรือระบบกำลังประมวลผล...</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                            <p className="text-[10px] font-black text-gray-400 uppercase mb-2">ข้อมูลผู้สมัคร</p>
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-lg shadow-sm">🏪</div>
+                                                <div>
+                                                    <p className="text-sm font-black text-gray-900">{selectedApproval.tenant.name}</p>
+                                                    <p className="text-[10px] font-bold text-gray-500">Plan: {selectedApproval.plan}</p>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 

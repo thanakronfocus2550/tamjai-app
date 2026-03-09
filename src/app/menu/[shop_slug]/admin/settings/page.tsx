@@ -1,34 +1,82 @@
 "use client";
 
-import React, { useState, use } from "react";
+import React, { useState, use, useEffect } from "react";
 import Link from "next/link";
-import { Save, Bell, Clock, MapPin, Phone, Globe, CreditCard, Palette, ChevronRight } from "lucide-react";
+import { Save, Bell, Clock, MapPin, Phone, Globe, CreditCard, Palette, ChevronRight, MessageCircle, ExternalLink, CheckCircle2 } from "lucide-react";
 
 export default function StoreSettingsPage({ params }: { params: Promise<{ shop_slug: string }> }) {
     const { shop_slug } = use(params);
-    const storeName = shop_slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
+    const [isLoading, setIsLoading] = useState(true);
+    const [saved, setSaved] = useState(false);
     const [form, setForm] = useState({
-        name: storeName,
-        phone: "081-234-5678",
-        address: "ซอยเอกมัย 12 วัฒนา กรุงเทพฯ",
+        name: "",
+        phone: "",
+        address: "",
         openTime: "09:00",
         closeTime: "17:00",
-        lineToken: "",
-        deliveryEnabled: true,
-        pickupEnabled: true,
         isOpen: true,
         bankName: "กสิกรไทย (KBank)",
-        bankAccount: "012-3-45678-9",
+        bankAccount: "",
+        deliveryEnabled: true,
+        pickupEnabled: true,
+        lineUserId: "",
     });
 
-    const [saved, setSaved] = useState(false);
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const res = await fetch(`/api/menu/${shop_slug}/settings`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setForm({
+                        name: data.name || "",
+                        phone: data.phone || "",
+                        address: data.address || "",
+                        openTime: data.openTime || "09:00",
+                        closeTime: data.closeTime || "17:00",
+                        isOpen: data.isOpen ?? true,
+                        bankName: data.bankName || "กสิกรไทย (KBank)",
+                        bankAccount: data.bankAccount || "",
+                        deliveryEnabled: data.deliveryEnabled ?? true,
+                        pickupEnabled: data.pickupEnabled ?? true,
+                        lineUserId: data.lineUserId || "",
+                    });
+                }
+            } catch (err) {
+                console.error("Failed to fetch settings", err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchData();
+    }, [shop_slug]);
 
-    const save = () => {
-        // In production: PUT /api/stores/[shop_slug]
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
+    const save = async () => {
+        try {
+            const res = await fetch(`/api/menu/${shop_slug}/settings`, {
+                method: "PUT",
+                body: JSON.stringify(form)
+            });
+            if (res.ok) {
+                setSaved(true);
+                setTimeout(() => setSaved(false), 2500);
+            }
+        } catch (err) {
+            console.error(err);
+            alert("เกิดข้อผิดพลาดในการบันทึก");
+        }
     };
+
+    const connectLine = () => {
+        // Mock LINE connection for now
+        // In reality, this would open a LIFF or LINE Login URL
+        const mockLineId = "U" + Math.random().toString(36).substring(2, 12).toUpperCase();
+        setForm({ ...form, lineUserId: mockLineId });
+        alert("เชื่อมต่อ LINE สำเร็จ! (Mock)");
+    };
+
+    if (isLoading) return <div className="p-8 text-center text-gray-500 font-bold">กำลังโหลดข้อมูล...</div>;
 
     return (
         <div className="p-4 space-y-4 max-w-md mx-auto">
@@ -163,21 +211,57 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
                 </div>
             </section>
 
-            {/* LINE Notify */}
-            <section className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
-                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                    <Bell className="h-4 w-4 text-green-500" /> LINE Notify Token
-                </h3>
-                <p className="text-xs text-gray-500 leading-relaxed">รับการแจ้งเตือนออเดอร์ใหม่เข้ากลุ่ม LINE ของร้านทันที</p>
-                <input
-                    type="password" placeholder="วาง Token ที่ได้จาก notify-bot.line.me ที่นี่"
-                    value={form.lineToken} onChange={e => setForm({ ...form, lineToken: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all font-mono"
-                />
-                <a href="https://notify-bot.line.me" target="_blank" rel="noopener noreferrer"
-                    className="text-xs text-orange-500 font-semibold hover:underline">
-                    วิธีสร้าง LINE Notify Token →
-                </a>
+            {/* LINE Smart Notification */}
+            <section className="bg-white border border-emerald-100 rounded-2xl p-4 space-y-4 shadow-sm shadow-emerald-50">
+                <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                        <MessageCircle className="h-4 w-4 text-emerald-500" /> LINE Smart Notification
+                    </h3>
+                    {form.lineUserId ? (
+                        <span className="flex items-center gap-1 text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="h-3 w-3" /> เชื่อมต่อแล้ว
+                        </span>
+                    ) : (
+                        <span className="text-[10px] font-black text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">
+                            ยังไม่ได้เชื่อมต่อ
+                        </span>
+                    )}
+                </div>
+
+                <p className="text-xs text-gray-500 leading-relaxed">
+                    แจ้งเตือนออเดอร์ใหม่ผ่าน LINE พร้อมแสดงรายละเอียดออเดอร์และการ์ดสรุปยอดที่อ่านง่าย
+                </p>
+
+                {form.lineUserId ? (
+                    <div className="bg-emerald-50/50 rounded-xl p-3 border border-emerald-100/50">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">LINE USER ID</p>
+                        <p className="text-xs font-mono text-emerald-700 font-bold truncate">{form.lineUserId}</p>
+                        <button
+                            onClick={() => setForm({ ...form, lineUserId: "" })}
+                            className="text-[10px] text-red-400 font-bold mt-2 hover:underline"
+                        >
+                            ยกเลิกการเชื่อมต่อ
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        onClick={connectLine}
+                        className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-100"
+                    >
+                        <MessageCircle className="h-4 w-4" /> เชื่อมต่อ LINE รับออเดอร์
+                    </button>
+                )}
+
+                <div className="p-3 bg-gray-50 rounded-xl">
+                    <p className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                        <Bell className="h-3 w-3" /> วิธีการเปิดใช้งาน:
+                    </p>
+                    <ol className="text-[10px] text-gray-500 list-decimal ml-4 mt-1 space-y-0.5 font-medium">
+                        <li>กดปุ่ม "เชื่อมต่อ LINE" ด้านบน</li>
+                        <li>เพิ่มเพื่อน LINE OA ของ Tamjai Pro</li>
+                        <li>คุณจะได้รับแจ้งเตือนออเดอร์ทันทีเมื่อมีลูกค้าสั่งอาหาร</li>
+                    </ol>
+                </div>
             </section>
 
             {/* Store URL */}
