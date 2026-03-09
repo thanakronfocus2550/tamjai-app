@@ -86,26 +86,32 @@ export async function POST(req: Request) {
         // Handle slip upload for PRO plan
         if (plan === 'pro' && slipBase64) {
             try {
-                // Ensure the uploads directory exists
-                const fs = require('fs');
-                const path = require('path');
-                const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'slips');
-                if (!fs.existsSync(uploadDir)) {
-                    fs.mkdirSync(uploadDir, { recursive: true });
-                }
-
                 // Extract base64 data
                 const matches = slipBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
                 if (matches && matches.length === 3) {
-                    const fileExtension = matches[1] === 'image/png' ? 'png' : 'jpg';
-                    const buffer = Buffer.from(matches[2], 'base64');
+                    const mimeType = matches[1];
+                    const base64Data = matches[2];
+                    const fileExtension = mimeType === 'image/png' ? 'png' : 'jpg';
+                    const buffer = Buffer.from(base64Data, 'base64');
                     const fileName = `slip-${tenant.id}-${Date.now()}.${fileExtension}`;
-                    const filePath = path.join(uploadDir, fileName);
 
-                    fs.writeFileSync(filePath, buffer);
-                    const fileUrl = `/uploads/slips/${fileName}`;
+                    let fileUrl = null;
 
-                    // Create PaymentApproval record
+                    // 1. Try to save to disk (works on Local, fails on Vercel)
+                    try {
+                        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'slips');
+                        if (!fs.existsSync(uploadDir)) {
+                            fs.mkdirSync(uploadDir, { recursive: true });
+                        }
+                        const filePath = path.join(uploadDir, fileName);
+                        fs.writeFileSync(filePath, buffer);
+                        fileUrl = `/uploads/slips/${fileName}`;
+                    } catch (fsError) {
+                        console.warn("FS Warning: Could not save slip to disk (expected on Vercel):", fsError);
+                        // On Vercel, we can't save files, but we can still process the AI
+                    }
+
+                    // 2. Create PaymentApproval record (Always do this)
                     const paymentApproval = await (prisma as any).paymentApproval.create({
                         data: {
                             refId: `PAY-${Date.now()}`,
@@ -114,11 +120,11 @@ export async function POST(req: Request) {
                             amount: couponCode === 'TAMJAI100' ? 350 : 450,
                             bank: `โอนเข้าแพลตฟอร์ม`,
                             status: 'PENDING',
-                            slipUrl: fileUrl,
+                            slipUrl: fileUrl, // Might be null on Vercel, but record is created
                         }
                     });
 
-                    // AI Auto-Verification
+                    // 3. AI Auto-Verification using the buffer/base64 directly
                     if (process.env.GEMINI_API_KEY) {
                         try {
                             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
@@ -126,8 +132,8 @@ export async function POST(req: Request) {
 
                             const imagePart = {
                                 inlineData: {
-                                    data: Buffer.from(fs.readFileSync(filePath)).toString("base64"),
-                                    mimeType: fileExtension === 'png' ? 'image/png' : 'image/jpeg'
+                                    data: base64Data,
+                                    mimeType: mimeType
                                 },
                             };
 
@@ -147,8 +153,9 @@ export async function POST(req: Request) {
                         }
                     }
                 }
-            } catch (fsError) {
-                console.error("Error saving slip:", fsError);
+            } catch (error) {
+                console.error("Slip processing error:", error);
+                // We don't throw here to avoid failing the whole registration
             }
         }
 
