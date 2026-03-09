@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { ShoppingBag, Star, AlertTriangle, MessageCircle, Clock } from "lucide-react";
 import Link from "next/link";
+import FloatingMascot from "@/components/FloatingMascot";
 
 // Using Framer Motion for smooth entrance
 import { motion, AnimatePresence } from "framer-motion";
@@ -160,6 +161,9 @@ export default function StorefrontLayout({
                                 </motion.div>
                             )}
                         </AnimatePresence>
+
+                        {/* AI Mascot Support Button */}
+                        <FloatingMascot shopSlug={unwrappedParams.storeDomain} />
                     </>
                 )}
             </div>

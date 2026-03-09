@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, UtensilsCrossed, Settings, ExternalLink, ChevronLeft, LogOut } from "lucide-react";
 import { useSession } from "next-auth/react";
+import FloatingMascot from "@/components/FloatingMascot";
 
 export default function StoreAdminLayout({
     children,
@@ -112,6 +113,9 @@ export default function StoreAdminLayout({
             <main className="flex-1 overflow-y-auto pb-20">
                 {children}
             </main>
+
+            {/* AI Mascot Support Button */}
+            <FloatingMascot shopSlug={shop_slug} />
 
             <nav className="fixed bottom-0 inset-x-0 bg-white border-t border-gray-100 z-30">
                 <div className="max-w-md mx-auto flex">

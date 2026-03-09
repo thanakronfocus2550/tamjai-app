@@ -3,79 +3,61 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function GET(request: NextRequest) {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "SUPER_ADMIN") {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export async function POST(req: NextRequest) {
     try {
-        // Check if prisma is ready for this model
-        // @ts-ignore
-        if (!prisma.helpdeskTicket) {
-            console.error("Prisma client is out of sync: helpdeskTicket model not found.");
-            return NextResponse.json({ error: "Prisma client out of sync. Please run 'npx prisma generate'." }, { status: 500 });
+        const body = await req.json();
+        const { shopSlug, subject, message } = body;
+
+        if (!shopSlug || !subject || !message) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
 
-        // @ts-ignore
-        const tickets = await prisma.helpdeskTicket.findMany({
-            include: {
-                tenant: {
-                    select: {
-                        name: true
-                    }
-                }
-            },
-            orderBy: {
-                createdAt: 'desc'
+        const ticket = await prisma.mascotTicket.create({
+            data: {
+                shopSlug,
+                subject,
+                message,
+                status: "PENDING"
             }
         });
-        return NextResponse.json(tickets);
+
+        return NextResponse.json(ticket, { status: 201 });
     } catch (error) {
-        console.error("Error fetching tickets:", error);
-        return NextResponse.json({ error: "Failed to fetch tickets" }, { status: 500 });
+        console.error("Error creating mascot ticket:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
 
-export async function PATCH(request: NextRequest) {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "SUPER_ADMIN") {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
+export async function GET(req: NextRequest) {
     try {
-        const { id, status, reply } = await request.json();
+        const session = await getServerSession(authOptions);
+        if (!session || session.user.role !== "SUPER_ADMIN") {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
 
-        // @ts-ignore
-        const currentTicket = await prisma.helpdeskTicket.findUnique({
-            where: { id }
+        const tickets = await prisma.mascotTicket.findMany({
+            orderBy: { createdAt: 'desc' }
         });
 
-        if (!currentTicket) {
-            return NextResponse.json({ error: "Ticket not found" }, { status: 404 });
-        }
-
-        const messages = Array.isArray(currentTicket.messages) ? [...currentTicket.messages as any[]] : [];
-        if (reply) {
-            messages.push({
-                role: 'admin',
-                content: reply,
-                createdAt: new Date()
-            });
-        }
-
-        // @ts-ignore
-        const updatedTicket = await prisma.helpdeskTicket.update({
-            where: { id },
-            data: {
-                status: status || currentTicket.status,
-                messages: messages
+        // Try to join with tenant name if not "general"
+        const formattedTickets = await Promise.all(tickets.map(async (t: any) => {
+            let shopName = t.shopSlug;
+            if (t.shopSlug !== "general") {
+                const tenant = await prisma.tenant.findUnique({
+                    where: { slug: t.shopSlug },
+                    select: { name: true }
+                });
+                if (tenant) shopName = tenant.name;
             }
-        });
+            return {
+                ...t,
+                shopName
+            };
+        }));
 
-        return NextResponse.json(updatedTicket);
+        return NextResponse.json(formattedTickets);
     } catch (error) {
-        console.error("Error updating ticket:", error);
-        return NextResponse.json({ error: "Failed to update ticket" }, { status: 500 });
+        console.error("Error fetching mascot tickets:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }

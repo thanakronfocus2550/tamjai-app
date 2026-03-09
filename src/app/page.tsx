@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import FloatingMascot from "@/components/FloatingMascot";
 
 const slideUp: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -264,6 +265,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FAFAFA] font-sans text-gray-900 selection:bg-brand-orange/20 selection:text-brand-orange overflow-x-hidden relative">
+      <FloatingMascot shopSlug="superadmin" />
       <PromotionalPopup show={showPromo} onClose={closePromo} onDismiss={dismissPromo} config={PROMO_CONFIG} />
 
       {/* Abstract Background Pattern */}

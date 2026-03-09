@@ -20,6 +20,7 @@ import {
   HelpCircle,
   LogOut
 } from "lucide-react";
+import FloatingMascot from "@/components/FloatingMascot";
 
 export default function AdminLayout({
   children,
@@ -211,6 +212,9 @@ export default function AdminLayout({
           {children}
         </div>
       </main>
+
+      {/* AI Mascot Support Button */}
+      <FloatingMascot shopSlug="superadmin" />
     </div>
   );
 }

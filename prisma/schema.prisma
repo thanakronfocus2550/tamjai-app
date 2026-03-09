@@ -172,6 +172,16 @@ model FaqItem {
   updatedAt DateTime @updatedAt
 }
 
+model MascotTicket {
+  id        String   @id @default(cuid())
+  shopSlug  String   // "general" for public or actual slug
+  subject   String
+  message   String   @db.Text
+  status    String   @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // NextAuth Models
 
 model Account {
