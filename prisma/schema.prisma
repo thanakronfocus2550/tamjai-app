@@ -34,6 +34,7 @@ model Tenant {
   themeColor    String    @default("#FF6B00")
   themeConfig   Json?     // { primaryColor: string, darkMode: boolean, etc }
   isActive      Boolean   @default(true)
+  isOpen        Boolean   @default(true)
   lineUserId    String?   // LINE User ID for Messaging API
   phone         String?
   address       String?

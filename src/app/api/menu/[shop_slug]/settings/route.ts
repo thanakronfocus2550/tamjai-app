@@ -11,24 +11,17 @@ export async function GET(
     try {
         const { shop_slug } = await params;
 
-        // @ts-ignore
         const tenant = await prisma.tenant.findUnique({
             where: { slug: shop_slug },
-            // @ts-ignore
             select: {
                 id: true,
                 name: true,
                 slug: true,
-                // @ts-ignore
                 phone: true,
-                // @ts-ignore
                 address: true,
-                // @ts-ignore
                 openTime: true,
-                // @ts-ignore
                 closeTime: true,
                 isOpen: true,
-                // @ts-ignore
                 lineUserId: true,
                 bankName: true,
                 bankAccount: true,
@@ -68,7 +61,6 @@ export async function PUT(
         // Remove fields that shouldn't be updated here
         const { id, slug, createdAt, updatedAt, ...updateData } = body;
 
-        // @ts-ignore
         const tenant = await prisma.tenant.update({
             where: { slug: shop_slug },
             data: updateData
