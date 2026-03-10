@@ -1,11 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
 export async function POST(req: Request) {
     try {
-        if (!process.env.GEMINI_API_KEY) {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
             console.error("AI Configuration Error: GEMINI_API_KEY is missing");
             return NextResponse.json({
                 error: "Configuration Error",
@@ -13,6 +12,8 @@ export async function POST(req: Request) {
             }, { status: 500 });
         }
 
+        // Initialize Gemini model inside handler for robustness
+        const genAI = new GoogleGenerativeAI(apiKey);
         const { message, shopSlug } = await req.json();
 
         if (!message) {
@@ -48,7 +49,11 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ reply: text });
     } catch (error: any) {
-        console.error("Gemini API Error:", error);
+        console.error("Gemini API Error (Details):", {
+            message: error.message,
+            stack: error.stack,
+            status: error.status
+        });
         return NextResponse.json({
             error: "Failed to generate AI response",
             message: error.message || "Unknown error occurred",
