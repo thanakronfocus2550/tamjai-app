@@ -2,7 +2,7 @@
 
 import React, { useState, use, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Clock, CheckCircle2, ChevronRight, TrendingUp, ShoppingBag, ChevronDown, MapPin, Phone, Bike, Store, Bell, QrCode, Download, X } from "lucide-react";
+import { Clock, CheckCircle2, ChevronRight, TrendingUp, ShoppingBag, ChevronDown, MapPin, Phone, Bike, Store, Bell, QrCode, Download, X, ExternalLink } from "lucide-react";
 import { playOrderSound, requestNotificationPermission, showBrowserNotification } from "@/hooks/useOrderSound";
 
 
@@ -152,14 +152,16 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
             <div className="bg-gradient-to-r from-orange-500 to-orange-400 rounded-2xl p-4 flex items-center justify-between shadow-md shadow-orange-200">
                 <div>
                     <p className="text-xs font-bold text-white/80 uppercase tracking-wider mb-1">🔗 URL หน้าร้านของคุณ</p>
-                    <p className="font-mono text-sm text-white font-bold">tamjai.pro/menu/{shop_slug}</p>
-                    <p className="text-xs text-white/70 mt-0.5">แชร์ลิงก์นี้ให้ลูกค้าสั่งได้เลย</p>
+                    <p className="font-mono text-sm text-white font-bold opacity-90 truncate max-w-[200px]">
+                        {typeof window !== 'undefined' ? `${window.location.host}/menu/${shop_slug}` : `tamjai-app.vercel.app/menu/${shop_slug}`}
+                    </p>
+                    <p className="text-xs text-white/70 mt-0.5">ลูกค้าสแกนเพื่อสั่งอาหารที่โต๊ะ</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                     <div className="flex items-center gap-2">
                         <Link href={"/menu/" + shop_slug} target="_blank"
                             className="flex items-center gap-1.5 text-xs font-bold text-orange-500 bg-white px-3 py-2 rounded-xl shrink-0 hover:bg-orange-50 transition-colors">
-                            เปิดดู
+                            <ExternalLink className="h-3 w-3" /> หน้าร้าน
                         </Link>
                         <button
                             onClick={() => setShowQR(true)}
@@ -353,14 +355,16 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
 
                             <div className="bg-white p-4 rounded-3xl aspect-square flex items-center justify-center border-2 border-orange-100 shadow-md">
                                 <img
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://tamjai.pro/menu/${shop_slug}`}
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${typeof window !== 'undefined' ? `https://${window.location.host}/menu/${shop_slug}` : `https://tamjai-app.vercel.app/menu/${shop_slug}`}`}
                                     alt="Store QR Code"
                                     className="w-full h-full"
                                 />
                             </div>
 
-                            <div className="space-y-1">
-                                <p className="text-sm font-bold text-gray-900">tamjai.pro/menu/{shop_slug}</p>
+                            <div className="space-y-1 text-center">
+                                <p className="text-sm font-bold text-gray-900 break-all px-2">
+                                    {typeof window !== 'undefined' ? `${window.location.host}/menu/${shop_slug}` : `tamjai-app.vercel.app/menu/${shop_slug}`}
+                                </p>
                                 <p className="text-xs font-medium text-gray-500">
                                     พิมพ์เพื่อวางบนโต๊ะอาหาร หรือแชร์ในโซเชียล
                                 </p>
@@ -369,7 +373,7 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
                             <div className="pt-2">
                                 <button
                                     onClick={() => {
-                                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=https://tamjai.pro/menu/${shop_slug}`;
+                                        const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${typeof window !== 'undefined' ? `https://${window.location.host}/menu/${shop_slug}` : `https://tamjai-app.vercel.app/menu/${shop_slug}`}`;
                                         window.open(qrUrl, '_blank');
                                     }}
                                     className="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-orange-100 hover:bg-orange-600 transition-all active:scale-95"

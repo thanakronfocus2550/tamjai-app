@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
-import { ShoppingBag, Clock, ChevronLeft, Plus, Minus, X, ChevronDown, MapPin, Bike, Users, Store, Loader2 } from "lucide-react";
+import { ShoppingBag, Clock, ChevronLeft, Plus, Minus, X, ChevronDown, MapPin, Bike, Users, Store, Loader2, ExternalLink } from "lucide-react";
 import { useCart, CartItem as GlobalCartItem } from "@/context/CartContext";
 
 // ─── Types ─────────────────────────────────────────────
@@ -212,6 +212,7 @@ export default function MenuPage({ params, searchParams }: {
     const [loading, setLoading] = useState(true);
     const [isOpen, setIsOpen] = useState(true); // Default to true, update on client
     const [mounted, setMounted] = useState(false);
+    const [settings, setSettings] = useState<any>(null);
 
     // Initial check on mount
     useEffect(() => {
@@ -227,12 +228,14 @@ export default function MenuPage({ params, searchParams }: {
         async function fetchData() {
             setLoading(true);
             try {
-                const [catsRes, productsRes] = await Promise.all([
+                const [catsRes, productsRes, settingsRes] = await Promise.all([
                     fetch(`/api/menu/${shop_slug}/categories`),
-                    fetch(`/api/menu/${shop_slug}/products`)
+                    fetch(`/api/menu/${shop_slug}/products`),
+                    fetch(`/api/menu/${shop_slug}/settings`)
                 ]);
                 const catsData = await catsRes.json();
                 const productsData = await productsRes.json();
+                const settingsData = await settingsRes.json();
 
                 // Format price for decimal
                 const formattedProducts = productsData.map((p: any) => ({
@@ -242,7 +245,21 @@ export default function MenuPage({ params, searchParams }: {
 
                 setCategories(catsData);
                 setMenuItems(formattedProducts);
+                setSettings(settingsData);
                 if (catsData.length > 0) setActiveCategory(catsData[0].id);
+
+                // Update Order Type based on store settings
+                if (settingsData) {
+                    const canDelivery = settingsData.deliveryEnabled ?? true;
+                    const canPickup = settingsData.pickupEnabled ?? true;
+
+                    // If currently on table mode (from QR), keep it. 
+                    // Otherwise, pick the first available method.
+                    if (orderType !== "table") {
+                        if (canDelivery) setOrderType("delivery");
+                        else if (canPickup) setOrderType("pickup");
+                    }
+                }
             } catch (err) {
                 console.error("Failed to fetch menu data", err);
             } finally {
@@ -335,7 +352,11 @@ export default function MenuPage({ params, searchParams }: {
 
                         {/* Order type tabs */}
                         <div className="flex mt-4 bg-gray-100 p-1 rounded-xl gap-0.5">
-                            {ORDER_TYPES.map(t => (
+                            {ORDER_TYPES.filter(t => {
+                                if (t.id === "delivery") return settings?.deliveryEnabled ?? true;
+                                if (t.id === "pickup") return settings?.pickupEnabled ?? true;
+                                return true; // Table is always enabled if from QR
+                            }).map(t => (
                                 <button
                                     key={t.id}
                                     onClick={() => setOrderType(t.id)}
