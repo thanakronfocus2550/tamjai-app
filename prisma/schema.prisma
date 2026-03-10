@@ -37,6 +37,8 @@ model Tenant {
   isOpen        Boolean   @default(true)
   lineUserId    String?   // LINE User ID for Messaging API
   phone         String?
+  bannerUrl     String?
+  description   String?   @db.Text
   address       String?
   openTime      String    @default("09:00")
   closeTime     String    @default("21:00")
@@ -93,7 +95,10 @@ model Product {
   categoryId    String
   category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   isAvailable   Boolean   @default(true)
+  isRecommended Boolean   @default(false)
   addons        Json?     // Array of { name: string, price: number }
+  stockQuantity Int       @default(0)
+  trackStock    Boolean   @default(false)
   tenantId      String
   tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt     DateTime  @default(now())
@@ -108,6 +113,7 @@ model Order {
   items         Json     // Array of { name, qty, price, options }
   totalAmount   Decimal
   status        String   @default("new") // new, prepping, ready, completed, cancelled
+  orderType     String   @default("pickup") // pickup, delivery
   paymentMethod String   @default("cash")
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -189,6 +195,19 @@ model MascotTicket {
   subject   String
   message   String   @db.Text
   status    String   @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BroadcastMessage {
+  id        String   @id @default(cuid())
+  title     String
+  content   String   @db.Text
+  type      String   @default("INFO") // INFO, WARNING, SUCCESS, URGENT
+  author    String   @default("System Admin")
+  isGlobal  Boolean  @default(true)
+  targetTenants Json?    // Array of tenant IDs if not global
+  expiresAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

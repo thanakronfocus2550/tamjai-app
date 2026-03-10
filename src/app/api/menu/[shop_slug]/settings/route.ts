@@ -28,7 +28,9 @@ export async function GET(
                 deliveryEnabled: true,
                 pickupEnabled: true,
                 themeColor: true,
-                logoUrl: true
+                logoUrl: true,
+                bannerUrl: true,
+                description: true
             }
         });
 

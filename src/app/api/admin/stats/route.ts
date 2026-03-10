@@ -42,13 +42,31 @@ export async function GET(request: NextRequest) {
             include: {
                 _count: {
                     select: { orders: true }
+                },
+                orders: {
+                    select: { totalAmount: true }
+                }
+            }
+        });
+
+        // Get Top Sellers
+        const topSellers = await prisma.tenant.findMany({
+            take: 5,
+            orderBy: {
+                orders: {
+                    _count: 'desc'
+                }
+            },
+            include: {
+                _count: {
+                    select: { orders: true }
                 }
             }
         });
 
         // Format data for the dashboard
         const stats = {
-            revenue: totalRevenue._sum.totalAmount || 0,
+            revenue: Number(totalRevenue._sum.totalAmount || 0),
             tenants: tenantCount,
             proTenants: proTenantCount,
             users: userCount,
@@ -58,18 +76,24 @@ export async function GET(request: NextRequest) {
                 paymentApprovals: pendingApprovals,
                 urgentSupport: pendingTickets.map((t: any) => ({
                     id: t.id,
-                    name: t.ownerName,
+                    name: t.shopSlug === 'general' ? 'General' : t.shopSlug,
                     msg: t.subject,
-                    time: "Now" // Simplified
+                    time: "Now"
                 }))
             },
+            topSellers: topSellers.map(s => ({
+                id: s.id,
+                name: s.name,
+                orders: s._count.orders
+            })),
             recentTenants: tenants.map(t => ({
                 id: t.id,
                 name: t.name,
                 slug: t.slug,
                 package: t.plan || "FREE",
                 orders: t._count.orders,
-                status: "Active", // simplified
+                revenue: t.orders.reduce((sum, o) => sum + Number(o.totalAmount), 0),
+                status: t.isActive ? "Active" : "Inactive",
                 createdAt: t.createdAt
             }))
         };

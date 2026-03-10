@@ -21,7 +21,7 @@ export async function PATCH(
         }
 
         // 2. Security Check: Only SuperAdmin or TenantAdmin for THIS shop
-        if (!session || (session.user.role !== "SUPER_ADMIN" && session.user.shopSlug !== (currentOrder as any).shopSlug)) {
+        if (!session || (session.user.role !== "SUPER_ADMIN" && session.user.shopSlug !== currentOrder.shopSlug)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -32,7 +32,7 @@ export async function PATCH(
             return NextResponse.json({ error: "Missing status" }, { status: 400 });
         }
 
-        const order = await (prisma.order as any).update({
+        const order = await prisma.order.update({
             where: { orderId: id },
             data: { status }
         });
@@ -50,7 +50,7 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
-        const order = await (prisma.order as any).findUnique({
+        const order = await prisma.order.findUnique({
             where: { orderId: id }
         });
 

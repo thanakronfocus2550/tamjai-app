@@ -10,14 +10,6 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Check if prisma is ready for this model
-        // @ts-ignore
-        if (!prisma.paymentApproval) {
-            console.error("Prisma client is out of sync: paymentApproval model not found.");
-            return NextResponse.json({ error: "Prisma client out of sync. Please run 'npx prisma generate'." }, { status: 500 });
-        }
-
-        // @ts-ignore
         const approvals = await prisma.paymentApproval.findMany({
             include: {
                 tenant: {
@@ -46,7 +38,6 @@ export async function PATCH(request: NextRequest) {
     try {
         const { id, status, reason } = await request.json();
 
-        // @ts-ignore
         const approval = await prisma.paymentApproval.findUnique({
             where: { id },
             include: { tenant: true }
@@ -57,7 +48,6 @@ export async function PATCH(request: NextRequest) {
         }
 
         const updatedApproval = await prisma.$transaction(async (tx) => {
-            // @ts-ignore
             const up = await tx.paymentApproval.update({
                 where: { id },
                 data: {

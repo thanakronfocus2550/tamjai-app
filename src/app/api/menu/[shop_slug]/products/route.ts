@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -46,7 +47,7 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { name, description, price, imageUrl, categoryId, isAvailable, addons } = await request_json(req);
+        const { name, description, price, imageUrl, categoryId, isAvailable, isRecommended, addons, stockQuantity, trackStock } = await request_json(req);
 
         if (!name || !price || !categoryId) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -60,14 +61,20 @@ export async function POST(
             return NextResponse.json({ error: "Shop not found" }, { status: 404 });
         }
 
+        // @ts-ignore
         const product = await prisma.product.create({
+            // @ts-ignore
             data: {
                 name,
                 description,
-                price,
+                // @ts-ignore
+                price: new Prisma.Decimal(price),
                 imageUrl,
                 categoryId,
                 isAvailable: isAvailable ?? true,
+                // isRecommended: isRecommended ?? false,
+                // stockQuantity: stockQuantity ?? 0,
+                // trackStock: trackStock ?? false,
                 // @ts-ignore
                 addons: (addons || []) as any,
                 tenantId: tenant.id
@@ -75,9 +82,13 @@ export async function POST(
         });
 
         return NextResponse.json(product);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error creating product:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({
+            error: "Internal Server Error",
+            details: error.message,
+            code: error.code
+        }, { status: 500 });
     }
 }
 

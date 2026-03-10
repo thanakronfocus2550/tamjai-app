@@ -1,63 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
-export async function POST(req: NextRequest) {
-    try {
-        const body = await req.json();
-        const { shopSlug, subject, message } = body;
-
-        if (!shopSlug || !subject || !message) {
-            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-        }
-
-        const ticket = await prisma.mascotTicket.create({
-            data: {
-                shopSlug,
-                subject,
-                message,
-                status: "PENDING"
-            }
-        });
-
-        return NextResponse.json(ticket, { status: 201 });
-    } catch (error) {
-        console.error("Error creating mascot ticket:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-    }
-}
-
-export async function GET(req: NextRequest) {
+export async function GET(req: Request) {
     try {
         const session = await getServerSession(authOptions);
         if (!session || session.user.role !== "SUPER_ADMIN") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return new NextResponse("Unauthorized", { status: 401 });
         }
 
         const tickets = await prisma.mascotTicket.findMany({
-            orderBy: { createdAt: 'desc' }
+            orderBy: {
+                createdAt: 'desc'
+            }
         });
 
-        // Try to join with tenant name if not "general"
-        const formattedTickets = await Promise.all(tickets.map(async (t: any) => {
-            let shopName = t.shopSlug;
-            if (t.shopSlug !== "general") {
-                const tenant = await prisma.tenant.findUnique({
-                    where: { slug: t.shopSlug },
-                    select: { name: true }
-                });
-                if (tenant) shopName = tenant.name;
-            }
-            return {
-                ...t,
-                shopName
-            };
+        // Enhance with shop name if needed
+        const enhancedTickets = await Promise.all(tickets.map(async (t) => {
+            if (t.shopSlug === 'general') return { ...t, shopName: 'General Inquiry' };
+            const tenant = await prisma.tenant.findUnique({
+                where: { slug: t.shopSlug },
+                select: { name: true }
+            });
+            return { ...t, shopName: tenant?.name || t.shopSlug };
         }));
 
-        return NextResponse.json(formattedTickets);
+        return NextResponse.json(enhancedTickets);
     } catch (error) {
-        console.error("Error fetching mascot tickets:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        console.error("[HELPDESK_GET]", error);
+        return new NextResponse("Internal Error", { status: 500 });
+    }
+}
+
+export async function PATCH(req: Request) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session || session.user.role !== "SUPER_ADMIN") {
+            return new NextResponse("Unauthorized", { status: 401 });
+        }
+
+        const body = await req.json();
+        const { id, status } = body;
+
+        const ticket = await prisma.mascotTicket.update({
+            where: { id },
+            data: { status }
+        });
+
+        return NextResponse.json(ticket);
+    } catch (error) {
+        console.error("[HELPDESK_PATCH]", error);
+        return new NextResponse("Internal Error", { status: 500 });
     }
 }

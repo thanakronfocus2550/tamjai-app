@@ -1,0 +1,205 @@
+"use client";
+
+import React, { useState, use, useEffect, useRef } from "react";
+import Link from "next/link";
+import { Clock, CheckCircle2, ShoppingBag, MapPin, Bike, Store, Loader2, ChevronLeft, Flame, Bell, Volume2 } from "lucide-react";
+import { playOrderSound, requestNotificationPermission, showBrowserNotification } from "@/hooks/useOrderSound";
+
+type OrderStatus = "new" | "prepping" | "ready" | "completed" | "cancelled";
+
+export default function KitchenPage({ params }: { params: Promise<{ shop_slug: string }> }) {
+    const { shop_slug } = use(params);
+    const [orders, setOrders] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [notifEnabled, setNotifEnabled] = useState(false);
+    const prevNewCount = useRef(0);
+
+    const fetchOrders = async () => {
+        try {
+            const res = await fetch(`/api/orders?shop_slug=${shop_slug}`);
+            if (res.ok) {
+                const data = await res.json();
+                // We only care about active kitchen orders (new, prepping, ready)
+                const activeOrders = data.filter((o: any) => ["new", "prepping", "ready"].includes(o.status));
+
+                const newOrders = data.filter((o: any) => o.status === "new");
+                if (newOrders.length > prevNewCount.current && !isLoading) {
+                    playOrderSound();
+                    showBrowserNotification(`👨‍🍳 ออเดอร์ใหม่!`, `มีรายการใหม่รอให้เชฟจัดการครับ`);
+                }
+                prevNewCount.current = newOrders.length;
+                setOrders(activeOrders);
+            }
+        } catch (err) {
+            console.error("Failed to fetch kitchen orders:", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        requestNotificationPermission().then(() => {
+            setNotifEnabled(typeof Notification !== "undefined" && Notification.permission === "granted");
+        });
+        fetchOrders();
+        const interval = setInterval(fetchOrders, 10000);
+        return () => clearInterval(interval);
+    }, [shop_slug]);
+
+    const updateStatus = async (orderId: string, nextStatus: OrderStatus) => {
+        try {
+            const res = await fetch(`/api/orders/${orderId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ status: nextStatus }),
+            });
+            if (res.ok) fetchOrders();
+        } catch (err) {
+            console.error("Status update error:", err);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-900 text-white p-6 font-sans">
+            {/* KDS Header */}
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <Link href={`/menu/${shop_slug}/admin`} className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all">
+                        <ChevronLeft className="h-6 w-6" />
+                    </Link>
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tighter flex items-center gap-3">
+                            KITCHEN SYSTEM <span className="text-orange-500">PRO</span>
+                        </h1>
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mt-1 flex items-center gap-2">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span> LIVE ORDER MONITORING
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-xs ${notifEnabled ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
+                        <Bell className="h-4 w-4" />
+                        {notifEnabled ? "ALERTS ON" : "ALERTS OFF"}
+                    </div>
+                    <div className="bg-white/10 px-4 py-2 rounded-2xl font-black text-xs text-orange-400">
+                        {orders.length} ACTIVE
+                    </div>
+                </div>
+            </div>
+
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-40 text-gray-500">
+                    <Loader2 className="h-12 w-12 animate-spin text-orange-500 mb-4" />
+                    <p className="font-bold uppercase tracking-widest text-sm">Initializing Kitchen...</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {orders.length === 0 && (
+                        <div className="col-span-full py-40 text-center border-2 border-dashed border-white/10 rounded-[3rem]">
+                            <ShoppingBag className="h-16 w-16 mx-auto mb-4 text-white/10" />
+                            <h3 className="text-xl font-black text-gray-500 uppercase">NO ORDERS FOR NOW</h3>
+                            <p className="text-gray-600 text-sm mt-2 font-bold uppercase tracking-widest">Go take a break, Chef!</p>
+                        </div>
+                    )}
+
+                    {orders.map((order) => {
+                        const items = order.items || [];
+                        const isNew = order.status === "new";
+                        const isPrepping = order.status === "prepping";
+                        const elapsed = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
+
+                        return (
+                            <div key={order.id} className={`flex flex-col bg-gray-800 rounded-[2.5rem] border-2 transition-all overflow-hidden ${isNew ? "border-orange-500 shadow-2xl shadow-orange-500/10 ring-4 ring-orange-500/20" : "border-white/5"}`}>
+                                {/* Card Header */}
+                                <div className={`p-5 flex items-center justify-between ${isNew ? "bg-orange-500 text-white" : "bg-white/5 text-white"}`}>
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none">Order ID</p>
+                                        <h2 className="text-xl font-black tracking-tight mt-1 leading-none">#{order.orderId}</h2>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${elapsed > 20 ? "bg-red-500 text-white" : "bg-white/20 text-white"}`}>
+                                            <Clock className="h-3 w-3" />
+                                            {elapsed}m
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Items Container */}
+                                <div className="p-6 flex-1 space-y-4">
+                                    <div className="space-y-3">
+                                        {items.map((item: any, i: number) => (
+                                            <div key={i} className="flex gap-3">
+                                                <div className="h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center text-lg font-black text-orange-500 shrink-0">
+                                                    {item.qty}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-black text-base leading-tight uppercase tracking-tight">{item.name}</p>
+                                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                                        {(item.options as any)?.variants && (
+                                                            <span className="text-[9px] font-bold bg-white/10 text-white/60 px-2 py-0.5 rounded-lg uppercase tracking-widest">
+                                                                {(item.options as any).variants}
+                                                            </span>
+                                                        )}
+                                                        {(item.options as any)?.addons?.map((a: string) => (
+                                                            <span key={a} className="text-[9px] font-bold bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-lg uppercase tracking-widest">
+                                                                + {a}
+                                                            </span>
+                                                        ))}
+                                                        {item.note && (
+                                                            <span className="text-[10px] font-black bg-orange-500 text-white px-2 py-1 rounded-lg uppercase tracking-tighter block w-full mt-1">
+                                                                📝 {item.note}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Info Footer */}
+                                <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-gray-400">
+                                        {/* @ts-ignore */}
+                                        {order.orderType === "delivery" ? <Bike className="h-4 w-4" /> : <Store className="h-4 w-4" />}
+                                        {/* @ts-ignore */}
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{order.orderType || "pickup"}</span>
+                                    </div>
+                                    <p className="text-[11px] font-bold text-gray-500">{(order.customer as any).name}</p>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="p-3">
+                                    {isNew && (
+                                        <button
+                                            onClick={() => updateStatus(order.id, "prepping")}
+                                            className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-orange-500/20"
+                                        >
+                                            ACCEPT & COOK
+                                        </button>
+                                    )}
+                                    {isPrepping && (
+                                        <button
+                                            onClick={() => updateStatus(order.id, "ready")}
+                                            className="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-emerald-500/20"
+                                        >
+                                            READY TO SERVE
+                                        </button>
+                                    )}
+                                    {order.status === "ready" && (
+                                        <button
+                                            onClick={() => updateStatus(order.id, "completed")}
+                                            className="w-full bg-blue-500 hover:bg-blue-600 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                                        >
+                                            <CheckCircle2 className="h-5 w-5" /> MARK AS DONE
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+}

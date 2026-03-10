@@ -20,7 +20,23 @@ import {
   ShoppingBag,
   Globe,
   X,
-  Gift
+  Gift,
+  ExternalLink,
+  Users,
+  CircleDollarSign,
+  Flame,
+  Zap,
+  BarChart3,
+  HelpCircle,
+  Minus,
+  Plus,
+  LayoutPanelTop,
+  Wand2,
+  ChevronDown,
+  ChefHat,
+  Volume2,
+  Printer,
+  Bell
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
@@ -135,6 +151,128 @@ function FaqSection() {
               </AnimatePresence>
             </motion.div>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function UrgencyBanner() {
+  const [spots, setSpots] = useState(4);
+
+  useEffect(() => {
+    // Randomly "decrease" spots for effect
+    const timer = setTimeout(() => {
+      setSpots(3);
+    }, 15000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      className="bg-gray-900 text-white py-2.5 px-6 text-center text-xs font-bold relative z-[60] flex items-center justify-center gap-3 overflow-hidden"
+    >
+      <div className="absolute inset-0 bg-gradient-to-r from-orange-600/20 via-transparent to-orange-600/20 animate-pulse"></div>
+      <Flame className="h-3.5 w-3.5 text-orange-500 animate-bounce" />
+      <span className="relative z-10">
+        ด่วน! ราคาโปรโมชั่น 450.- พร้อมทดลองใช้ฟรี 7 วัน เหลือเพียง <span className="text-orange-500 text-sm font-black underline">{spots} สิทธิ์สุดท้าย</span> ของเดือนนี้เท่านั้น!
+      </span>
+      <Link href="/register" className="relative z-10 bg-white text-gray-900 px-3 py-1 rounded-full text-[10px] hover:bg-orange-50 transition-colors ml-2">
+        จองสิทธิ์เลย
+      </Link>
+    </motion.div>
+  );
+}
+
+function RoiCalculator() {
+  const [sales, setSales] = useState(50000);
+  const [gp, setGp] = useState(30);
+
+  const deliveryCost = sales * (gp / 100);
+  const tamjaiCost = 450;
+  const saving = deliveryCost - tamjaiCost;
+
+  return (
+    <section id="roi-calculator" className="py-24 bg-gray-900 text-white relative overflow-hidden border-b border-white/5">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-brand-orange/10 blur-[120px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
+
+      <div className="mx-auto max-w-7xl px-6 md:px-12 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <div className="mb-4 inline-flex items-center gap-2 text-brand-orange font-black text-sm uppercase tracking-widest">
+              <CircleDollarSign className="h-4 w-4" /> ROI Calculator
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black mb-6 leading-tight">
+              จ่ายค่า GP ไปทำไม?<br />ในเมื่อคุณ <span className="text-brand-orange">เก็บกำไรได้ 100%</span>
+            </h2>
+            <p className="text-gray-400 text-lg mb-10 leading-relaxed">
+              ลองคำนวณดูว่าในแต่ละเดือน คุณต้องเสียเงินให้แอปเดลิเวอรี่เท่าไหร่ และจะประหยัดไปได้แค่ไหนถ้าเปลี่ยนมาใช้ Tamjai Pro
+            </p>
+
+            <div className="space-y-8 bg-white/5 p-8 rounded-[2.5rem] border border-white/10 backdrop-blur-md">
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <label className="text-sm font-bold text-gray-400 uppercase tracking-widest">ยอดขายเดลิเวอรี่ / เดือน</label>
+                  <span className="text-2xl font-black text-brand-orange">฿{sales.toLocaleString()}</span>
+                </div>
+                <input
+                  type="range" min="10000" max="500000" step="5000"
+                  value={sales} onChange={(e) => setSales(parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand-orange"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <label className="text-sm font-bold text-gray-400 uppercase tracking-widest">GP ที่โดนหัก (%)</label>
+                  <span className="text-2xl font-black text-brand-orange">{gp}%</span>
+                </div>
+                <input
+                  type="range" min="15" max="35" step="1"
+                  value={gp} onChange={(e) => setGp(parseInt(e.target.value))}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand-orange"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="relative">
+            <motion.div
+              key={saving}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-gradient-to-br from-brand-orange to-orange-600 rounded-[3rem] p-10 md:p-14 shadow-2xl shadow-orange-500/20 text-center relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-bl-full"></div>
+              <p className="text-sm font-black uppercase tracking-[0.2em] text-white/80 mb-4">คุณจะประหยัดเงินได้ถึง</p>
+              <h3 className="text-5xl md:text-7xl font-black text-white mb-2 tabular-nums">฿{saving.toLocaleString()}</h3>
+              <p className="text-lg font-bold text-white/60 mb-8 lowercase">ต่อเดือน</p>
+
+              <div className="h-px bg-white/20 mb-8 w-full"></div>
+
+              <div className="grid grid-cols-2 gap-4 text-left">
+                <div className="bg-black/10 rounded-2xl p-4">
+                  <p className="text-[10px] font-black uppercase text-white/50 mb-1">เสียให้ GP</p>
+                  <p className="text-xl font-bold text-white">฿{deliveryCost.toLocaleString()}</p>
+                </div>
+                <div className="bg-white/10 rounded-2xl p-4">
+                  <p className="text-[10px] font-black uppercase text-white/50 mb-1">จ่ายให้ Tamjai</p>
+                  <p className="text-xl font-bold text-white">฿450</p>
+                </div>
+              </div>
+
+              <div className="mt-10 flex flex-col items-center gap-4">
+                <div className="inline-flex items-center gap-2 text-xs font-black bg-white text-brand-orange px-4 py-2 rounded-full shadow-lg">
+                  <Zap className="h-3 w-3 fill-current" /> ประหยัดเงินได้ 99.8% ทันที
+                </div>
+                <Link href="/register" className="text-white text-sm font-bold underline hover:text-white/80 transition-colors">
+                  เปลี่ยนมาใช้ Tamjai Pro เลยวันนี้
+                </Link>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>
@@ -265,6 +403,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FAFAFA] font-sans text-gray-900 selection:bg-brand-orange/20 selection:text-brand-orange overflow-x-hidden relative">
+      <UrgencyBanner />
       <FloatingMascot shopSlug="superadmin" />
       <PromotionalPopup show={showPromo} onClose={closePromo} onDismiss={dismissPromo} config={PROMO_CONFIG} />
 
@@ -459,6 +598,24 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Trust Badges */}
+        <section className="py-12 bg-white border-b border-gray-100 relative z-10">
+          <div className="mx-auto max-w-7xl px-6 md:px-12">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-10 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-4 md:mb-0">Secure Payments & Trusted by</p>
+              <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16">
+                {['KBank', 'SCB', 'Krungthai', 'PromptPay', 'Visa', 'Mastercard'].map(bank => (
+                  <div key={bank} className="text-xl font-black tracking-tighter text-gray-900 border-x border-gray-100 px-4">{bank}</div>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 text-gray-900">
+                <ShieldCheck className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">256-bit SSL</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Demo Section (New Section 2) */}
         <section id="demo" className="py-24 bg-[#FAFAFA] relative overflow-hidden border-y border-gray-100">
           <div className="absolute top-0 right-0 w-[50%] h-full bg-orange-500/5 blur-[120px] -z-10 rounded-l-full translate-x-1/2"></div>
@@ -645,6 +802,54 @@ export default function Home() {
             </div>
           </div>
         </section>
+        {/* How it Works Section */}
+        <section id="how-it-works" className="py-24 lg:py-32 bg-orange-50/30 relative overflow-hidden border-b border-gray-100 scroll-mt-20">
+          <div className="mx-auto max-w-7xl px-6 md:px-12">
+            <div className="text-center max-w-3xl mx-auto mb-20">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <div className="mb-4 inline-flex items-center gap-2 text-brand-orange font-black text-sm uppercase tracking-widest">
+                  How it Works
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-6 tracking-tight">3 ขั้นตอนง่ายๆ <span className="text-brand-orange">เริ่มรับออเดอร์</span> วันนี้</h2>
+              </motion.div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-12 relative">
+              {/* Connecting Line (Desktop) */}
+              <div className="absolute top-1/2 left-0 w-full h-0.5 bg-brand-orange/10 -translate-y-1/2 hidden md:block"></div>
+
+              {[
+                { step: "01", title: "สมัครสมาชิก", desc: "เลือกแพ็กเกจที่ต้องการ กรอกชื่อร้านเพื่อสร้าง URL ของตัวเอง (เช่น tamjai.pro/your-store)", icon: Users },
+                { step: "02", title: "ตั้งค่าเมนู", desc: "ใส่ชื่อเมนู ราคา และรูปภาพ ได้ง่ายๆ ผ่านมือถือ หรือถ่ายรูปเมนูกระดาษให้ AI ช่วยจัดการ", icon: MenuSquare },
+                { step: "03", title: "รับออเดอร์", desc: "สแกน QR Code พิมพ์วางที่โต๊ะ รับออเดอร์เข้าครัว (KDS) และแจ้งเตือนผ่าน LINE ทันที พร้อมระบบตัดสต๊อกอัจฉริยะ", icon: ShoppingBag }
+              ].map((step, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.2 }}
+                  className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-orange-500/5 border border-white relative z-10 flex flex-col items-center text-center group hover:-translate-y-2 transition-transform duration-500"
+                >
+                  <div className="absolute -top-6 bg-brand-orange text-white font-black px-5 py-2 rounded-full shadow-lg shadow-orange-500/30 text-sm">
+                    STEP {step.step}
+                  </div>
+                  <div className="h-20 w-20 rounded-3xl bg-orange-50 text-brand-orange flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                    <step.icon className="h-10 w-10" />
+                  </div>
+                  <h3 className="text-2xl font-black text-gray-900 mb-4">{step.title}</h3>
+                  <p className="text-gray-500 font-medium leading-relaxed">{step.desc}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <RoiCalculator />
 
         {/* Interactive Feature Showcase */}
         <section id="pro-features" className="py-24 lg:py-32 bg-[#111] text-white overflow-hidden relative scroll-mt-20">
@@ -662,6 +867,7 @@ export default function Home() {
                 <div className="flex flex-col gap-3">
                   {[
                     { id: "dashboard", icon: TrendingUp, t: "Live Dashboard", d: "ดูออเดอร์และยอดขายแบบวินาทีต่อวินาที" },
+                    { id: "kitchen", icon: ChefHat, t: "Kitchen Display (KDS)", d: "ระบบหน้าจอในครัว รับออเดอร์และตัดคิวทันใจ" },
                     { id: "menu", icon: MenuSquare, t: "Menu Management", d: "จัดหมวดหมู่ เปลี่ยนรูป อัปราคา ทันใจ" },
                     { id: "config", icon: Settings2, t: "Store Customization", d: "สร้างธีมร้านที่สะท้อนตัวตนคุณ" }
                   ].map((tab) => (
@@ -709,7 +915,17 @@ export default function Home() {
                     </div>
 
                     {activeTab === 'dashboard' && (
-                      <div className="flex-1 flex flex-col gap-6">
+                      <div className="flex-1 flex flex-col gap-6 relative">
+                        {/* Floating Notification */}
+                        <motion.div
+                          initial={{ x: 20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          className="absolute -right-4 -top-4 bg-emerald-500 text-white px-4 py-2 rounded-2xl shadow-xl z-20 flex items-center gap-2 border border-white/20"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-white animate-ping"></div>
+                          <span className="text-[10px] font-black uppercase">New Order!</span>
+                        </motion.div>
+
                         <div className="grid grid-cols-2 gap-4">
                           <div className="h-32 bg-white/5 rounded-3xl flex flex-col justify-center p-6 border border-white/5 hover:border-white/10 transition-colors">
                             <span className="text-xs font-black uppercase tracking-widest text-gray-500">Today's Sales</span>
@@ -724,16 +940,49 @@ export default function Home() {
                           </div>
                         </div>
                         <div className="flex-1 bg-white/5 rounded-3xl mt-2 p-6 border border-white/5 flex flex-col">
-                          <span className="text-xs font-black uppercase tracking-widest text-gray-500 mb-4">Revenue Overview</span>
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="text-xs font-black uppercase tracking-widest text-gray-500">Revenue Overview</span>
+                            <div className="flex gap-1">
+                              {[1, 2, 3].map(i => <div key={i} className={`h-1.5 w-1.5 rounded-full ${i === 3 ? 'bg-brand-orange' : 'bg-white/10'}`}></div>)}
+                            </div>
+                          </div>
                           <div className="flex-1 w-full flex items-end gap-2 sm:gap-4">
                             {[30, 50, 40, 70, 60, 90, 80].map((h, i) => (
                               <div key={i} className="flex-1 bg-gradient-to-t from-orange-600 to-brand-orange rounded-t-lg relative group/bar hover:brightness-110 transition-all cursor-pointer" style={{ height: `${h}%` }}>
-                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-gray-900 text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity">
-                                  {h * 10}
+                                <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-gray-900 text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
+                                  ฿{h * 100}
                                 </div>
                               </div>
                             ))}
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'kitchen' && (
+                      <div className="flex-1 flex flex-col gap-6 relative">
+                        <div className="grid grid-cols-2 gap-4">
+                          {[
+                            { id: "101", items: "2 Items", status: "Cooking", color: "bg-orange-500" },
+                            { id: "102", items: "1 Item", status: "New", color: "bg-emerald-500 animate-pulse" }
+                          ].map((order, i) => (
+                            <div key={i} className="bg-white/5 rounded-3xl p-5 border border-white/10 relative overflow-hidden">
+                              <div className={`absolute top-0 right-0 px-3 py-1 ${order.color} text-[8px] font-black uppercase rounded-bl-xl`}>{order.status}</div>
+                              <p className="text-[10px] font-black text-gray-500 uppercase mb-1">Order #{order.id}</p>
+                              <div className="h-4 w-24 bg-white/20 rounded mb-4"></div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-[10px] font-bold text-gray-400">{order.items}</span>
+                                <div className="h-8 w-8 rounded-full bg-white/10 flex items-center justify-center">
+                                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="bg-white/5 rounded-3xl p-6 border border-white/5 flex-1 flex flex-col justify-center items-center text-center">
+                          <Volume2 className="h-10 w-10 text-brand-orange mb-4 animate-bounce" />
+                          <p className="text-sm font-black text-white uppercase tracking-widest">Kitchen Audio Alerts</p>
+                          <p className="text-xs text-gray-500 mt-1">Never miss an order with smart notifications.</p>
                         </div>
                       </div>
                     )}
@@ -784,6 +1033,39 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <ComparisonSection />
+
+        <section id="features-grid" className="py-24 bg-gray-50/50">
+          <div className="mx-auto max-w-7xl px-6 md:px-12">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="text-4xl font-black text-gray-900 mb-4">ฟีเจอร์ที่ช่วยให้คุณ <span className="text-brand-orange">เหนือกว่า</span> คู่แข่ง</h2>
+              <p className="text-gray-500 font-medium">ทุกเครื่องมือถูกออกแบบมาเพื่อเพิ่มยอดขายและลดขั้นตอนการทำงานที่ซับซ้อน</p>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                { icon: Wand2, t: "AI Menu Generator", d: "ถ่ายรูปเมนูกระดาษ แล้วให้ AI แปลงเป็นเมนูเว็บบอร์ดอัตโนมัติในหลักวินาที" },
+                { icon: Zap, t: "✨ AI Smart Upselling", d: "ระบบแนะนำเมนูที่ทานคู่กันอัจฉริยะ (Powered by Gemini) ช่วยเพิ่มยอดขายต่อบิลได้ 15-30%" },
+                { icon: ShieldCheck, t: "🛡️ Real-time Inventory", d: "ระบบตัดสต๊อกอัตโนมัติ และขึ้นสถานะ 'Sold Out' ทันทีเมื่อของหมด ป้องกันออเดอร์ซ้อน" },
+                { icon: Printer, t: "Receipt & Kitchen Print", d: "รองรับการพิมพ์ใบเสร็จและใบแจ้งเข้าครัวอัตโนมัติ (Compatible with 80mm printers)" },
+                { icon: Bell, t: "🛎️ LINE Messaging API", d: "แจ้งเตือนออเดอร์ใหม่เข้า LINE ส่วนตัวของเจ้าของร้านแบบ Real-time พร้อมสรุปยอด" },
+                { icon: LayoutPanelTop, t: "Dynamic Table Layout", d: "จัดวางผังโต๊ะอาหารแบบ Visual ช่วยให้พนักงานบริหารจัดการโต๊ะได้ไม่พลาด" },
+                { icon: BarChart3, t: "Deep Analytics", d: "รายงานวิเคราะห์เมนูไหนขายดี ช่วงเวลาไหนออเดอร์พีค เพื่อวางแผนสต็อกได้แม่นยำ" },
+                { icon: Smartphone, t: "PWA Storefront", d: "รองรับการติดตั้งแอปบนมือถือลูกค้า (Add to Home Screen) ลื่นไหลเหมือนแอป Native" }
+              ].map((f, i) => (
+                <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 hover:border-brand-orange/50 transition-all group">
+                  <div className="h-14 w-14 rounded-2xl bg-orange-50 text-brand-orange flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <f.icon className="h-7 w-7" />
+                  </div>
+                  <h4 className="text-xl font-black text-gray-900 mb-2">{f.t}</h4>
+                  <p className="text-sm text-gray-500 leading-relaxed">{f.d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <ConversionFaq />
 
         {/* Testimonials */}
         <section id="reviews" className="py-24 lg:py-32 bg-white relative border-b border-gray-100 scroll-mt-20">
@@ -923,36 +1205,255 @@ export default function Home() {
             </motion.div>
           </div>
         </section>
+
+        {/* Featured Shops / Demo Section */}
+        <section id="featured" className="py-24 bg-white border-y border-gray-100 overflow-hidden">
+          <div className="mx-auto max-w-7xl px-6 md:px-12">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+              <div className="max-w-2xl">
+                <div className="mb-4 inline-flex items-center gap-2 text-brand-orange font-black text-sm uppercase tracking-widest px-4 py-1.5 bg-orange-50 rounded-full border border-orange-100">
+                  <Store className="h-4 w-4" /> Trusted Shops
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+                  ร้านค้าที่ไว้วางใจ<br />ให้ <span className="text-brand-orange">Tamjai Pro</span> ดูแล
+                </h2>
+              </div>
+              <Link href="/register" className="text-brand-orange font-black flex items-center gap-2 group hover:translate-x-1 transition-all">
+                ร่วมเป็นส่วนหนึ่งกับเรา <ArrowRight className="h-5 w-5" />
+              </Link>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[
+                { name: "เจ๊นก", type: "ส้มตำ & อาหารอีสาน", color: "from-orange-400 to-orange-600", slug: "demo-shop" },
+                { name: "มุมโปรด", type: "Cafe & Dessert", color: "from-emerald-400 to-emerald-600", slug: "demo-shop" },
+                { name: "ย่างเนย", type: "บุฟเฟ่ต์ปิ้งย่าง", color: "from-red-400 to-red-600", slug: "demo-shop" }
+              ].map((shop, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  className="group relative h-[350px] rounded-[2.5rem] overflow-hidden shadow-xl"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${shop.color} opacity-90 group-hover:scale-110 transition-transform duration-700`}></div>
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
+
+                  <div className="absolute inset-0 p-10 flex flex-col justify-between items-start text-white">
+                    <div className="h-16 w-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center font-black text-xl">
+                      {shop.name.charAt(0)}
+                    </div>
+                    <div className="w-full">
+                      <p className="text-xs font-black uppercase tracking-widest opacity-80 mb-2">{shop.type}</p>
+                      <h3 className="text-3xl font-black mb-6">ร้าน{shop.name}</h3>
+                      <Link
+                        href={`/menu/${shop.slug}`}
+                        target="_blank"
+                        className="inline-flex items-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-2xl font-bold text-sm hover:bg-gray-100 transition-colors shadow-lg"
+                      >
+                        ดูหน้าร้านตัวอย่าง <ExternalLink className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
         {/* FAQ Section */}
         <FaqSection />
       </main>
 
-      <footer className="bg-white py-12 md:py-16 px-6 border-t border-gray-100 z-10 relative">
+      <footer className="bg-gray-950 text-white py-20 px-6 md:px-12 z-10 relative overflow-hidden">
+        {/* Decorative element */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-orange/10 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2"></div>
+
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12 pb-12 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-orange-50 shadow-sm border border-orange-100">
-                <img src="/admin-logo.png" alt="Tamjai Pro" className="h-full w-full object-cover" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16 pb-16 border-b border-white/5">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-white/10 shadow-sm border border-white/10">
+                  <img src="/admin-logo.png" alt="Tamjai Pro" className="h-full w-full object-cover" />
+                </div>
+                <span className="text-2xl font-black tracking-tighter">Tamjai<span className="text-brand-orange">Pro</span></span>
               </div>
-              <span className="text-xl font-black tracking-tighter">Tamjai<span className="text-brand-orange">Pro</span></span>
+              <p className="text-gray-400 font-medium leading-relaxed max-w-xs">
+                เราช่วยเปลี่ยนร้านอาหารของคุณให้เข้าสู่ยุคดิจิทัลอย่างมืออาชีพ ประหยัดเวลา เพิ่มประสิทธิภาพ และสร้างประสบการณ์ที่ดีให้ลูกค้า
+              </p>
+              <div className="flex gap-4">
+                {['Facebook', 'LINE', 'TikTok'].map(sc => (
+                  <div key={sc} className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer border border-white/5">
+                    <span className="text-[10px] font-black">{sc.charAt(0)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap justify-center gap-6 md:gap-10">
-              {["Product", "Features", "Pricing"].map((link) => (
-                <Link key={link} href={`#${link.toLowerCase()}`} className="text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors uppercase tracking-widest">{link}</Link>
-              ))}
+
+            <div>
+              <h4 className="font-black text-lg mb-8 uppercase tracking-widest text-brand-orange">Product</h4>
+              <ul className="space-y-4">
+                {["Home", "Solutions", "Pro Features", "Pricing"].map(item => (
+                  <li key={item}>
+                    <Link href={`#${item.toLowerCase().replace(' ', '-')}`} className="text-gray-400 hover:text-white transition-colors font-bold">{item}</Link>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-xs font-bold text-gray-400">© 2024 Tamjai SaaS Platform. All rights reserved.</p>
-            <div className="flex flex-wrap gap-4 justify-center md:justify-end">
-              <Link href="/privacy" className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors">Privacy Policy</Link>
-              <Link href="/terms" className="text-xs font-bold text-gray-400 hover:text-gray-900 transition-colors">Terms of Service</Link>
-              <Link href="/contact" className="text-xs font-bold text-gray-400 hover:text-brand-orange transition-colors">Contact Support</Link>
+
+            <div>
+              <h4 className="font-black text-lg mb-8 uppercase tracking-widest text-brand-orange">Company</h4>
+              <ul className="space-y-4">
+                {["About Us", "Contact Us", "Terms of Service", "Privacy Policy"].map(item => (
+                  <li key={item}>
+                    <Link href={item.includes("Privacy") ? "/privacy" : item.includes("Terms") ? "/terms" : "/contact"} className="text-gray-400 hover:text-white transition-colors font-bold">{item}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="font-black text-lg mb-8 uppercase tracking-widest text-brand-orange">News Letter</h4>
+              <p className="text-gray-400 mb-6 font-medium">ติดตามอัปเดตฟีเจอร์ใหม่ๆ และโปรโมชั่นก่อนใคร</p>
+              <div className="flex gap-2">
+                <input type="email" placeholder="Email address" className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex-1 text-sm focus:outline-none focus:border-brand-orange transition-colors" />
+                <button className="bg-brand-orange px-4 py-3 rounded-xl font-bold hover:bg-orange-600 transition-colors">Go</button>
+              </div>
             </div>
           </div>
 
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <p className="text-sm font-bold text-gray-500">© 2024 Tamjai Pro SaaS Platform. Created with ❤️ for Food Businesses.</p>
+            <div className="flex gap-8">
+              <span className="text-xs font-black text-gray-600 uppercase tracking-widest">Support @ Tamjai.pro</span>
+            </div>
+          </div>
         </div>
       </footer>
     </div >
+  );
+}
+
+function ComparisonSection() {
+  const points = [
+    { label: "ค่าธรรมเนียม (GP)", tamjai: "0% (จ่ายรายเดือนคงที่)", others: "30-35% ต่อออเดอร์" },
+    { label: "การเป็นเจ้าของข้อมูลลูกค้า", tamjai: "เป็นของคุณ 100% (ดูเบอร์/LINE ได้)", others: "เป็นความลับของแอป" },
+    { label: "ความล่าช้าของการโอนเงิน", tamjai: "เงินเข้าบัญชีคุณโดยตรงทันที", others: "7-15 วันทำการ" },
+    { label: "การปรับแต่งหน้าตา (Branding)", tamjai: "ปรับธีม/สี/โลโก้ ได้อิสระ", others: "ใช้หน้าตารวมของแอป" },
+    { label: "ฟีเจอร์พรีเมียม (AI, พิมพ์ครัว)", tamjai: "รวมอยู่ในราคาเดียว", others: "ต้องซื้ออุปกรณ์แยกแพงๆ" },
+  ];
+
+  return (
+    <section className="py-24 bg-white">
+      <div className="mx-auto max-w-5xl px-6 md:px-12">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-black text-gray-900 mb-4">ทำไมคุณถึงควรเปลี่ยน?</h2>
+          <p className="text-gray-500 font-medium">เปรียบเทียบอิสระที่คุณจะได้รับ เมื่อเปลี่ยนจากแอปเดลิเวอรี่ทั่วไปมาเป็น Tamjai Pro</p>
+        </div>
+
+        <div className="bg-gray-50/50 rounded-[3rem] border border-gray-100 overflow-hidden shadow-xl">
+          <div className="grid grid-cols-3 bg-gray-900 text-white p-6 md:p-8">
+            <div className="font-black text-sm uppercase tracking-widest opacity-50">Feature</div>
+            <div className="font-black text-sm uppercase tracking-widest text-center text-brand-orange">Tamjai Pro</div>
+            <div className="font-black text-sm uppercase tracking-widest text-center opacity-50">Other Apps</div>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {points.map((p: any, i: number) => (
+              <div key={i} className="grid grid-cols-3 p-6 md:p-8 items-center bg-white hover:bg-orange-50/20 transition-colors">
+                <div className="text-sm font-black text-gray-900">{p.label}</div>
+                <div className="flex flex-col items-center gap-2">
+                  <Check className="h-6 w-6 text-brand-orange" />
+                  <span className="text-xs font-bold text-gray-900 text-center">{p.tamjai}</span>
+                </div>
+                <div className="flex flex-col items-center gap-2 opacity-30">
+                  <X className="h-6 w-6 text-gray-400" />
+                  <span className="text-xs font-bold text-gray-500 text-center">{p.others}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="bg-orange-50 p-8 text-center border-t border-orange-100">
+            <p className="text-brand-orange font-black mb-4">ไม่ติดสัญญาผูกมัด | ทดลองใช้ฟรี 7 วัน | ย้ายข้อมูลเมนูให้ฟรี!</p>
+            <Link href="/register" className="inline-flex items-center gap-2 rounded-full bg-brand-orange px-8 py-3 text-white font-black hover:bg-orange-600 transition-all">
+              เริ่มประหยัด GP วันนี้ <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ConversionFaq() {
+  const faqs = [
+    { q: "ไม่ได้จดทะเบียนบริษัท สมัครได้ไหม?", a: "ได้แน่นอนครับ! เราสนับสนุนทั้งร้านค้าบุคคลธรรมดา แผงลอย และร้านขนาดเล็ก เพียงมีเบอร์โทรศัพท์และบัญชีธนาคารก็เริ่มได้ทันที" },
+    { q: "ต้องซื้อเครื่อง POS หรือ iPad ใหม่ไหม?", a: "ไม่จำเป็นครับ Tamjai Pro ทำงานบนมือถือทั่วไป หรือใช้แท็บเล็ตที่คุณมีอยู่แล้วได้เลย ขอแค่มีอินเทอร์เน็ตก็พอ" },
+    { q: "ถ้าใช้ปริ้นเตอร์ 80mm อยู่แล้ว จะใช้ร่วมกันได้ไหม?", a: "รองรับครับ! ระบบของเราสามารถส่งออเดอร์เข้าปริ้นเตอร์ความร้อนมาตรฐาน (ESC/POS) แบรนด์ทั่วไปได้เลย" },
+    { q: "มีพนักงานช่วยสอนการใช้งานไหม?", a: "เรามี AI Mascot คอยสแตนด์บายตอบคำถาม 24 ชม. และมีคู่มือภาษาไทยแบบวิดีโอให้ดู ทำตามได้ใน 5 นาทีครับ" },
+    { q: "ลูกค้ายกเลิกออเดอร์ได้ไหม?", a: "คุณ (เจ้าของร้าน) มีอำนาจตัดสินใจสูงสุดครับ สามารถกดยกเลิกหรือแจ้งสถานะอาหารให้ลูกค้าทราบได้แบบ Real-time" },
+  ];
+
+  const [open, setOpen] = useState<number | null>(0);
+
+  return (
+    <section id="faq" className="py-24 bg-gray-50 scroll-mt-20">
+      <div className="mx-auto max-w-4xl px-6">
+        <div className="text-center mb-16">
+          <div className="mb-4 inline-flex items-center gap-2 text-brand-orange font-black text-sm uppercase tracking-widest px-4 py-1 bg-white rounded-full border border-orange-100">
+            <HelpCircle className="h-4 w-4" /> FAQ
+          </div>
+          <h2 className="text-4xl font-black text-gray-900 mb-4">คำถามที่คุณ <span className="text-brand-orange">อาจจะสงสัย</span></h2>
+          <p className="text-gray-500 font-medium leading-relaxed">เราตอบคำถามที่เจ้าของร้านส่วนใหญ่กังวลใจ เพื่อให้คุณมั่นใจที่สุดก่อนเริ่มงาน</p>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((f: any, i: number) => (
+            <motion.div
+              key={i}
+              className={`bg-white rounded-[2rem] border overflow-hidden transition-all ${open === i ? 'border-brand-orange shadow-lg' : 'border-gray-100 shadow-sm'}`}
+            >
+              <button
+                onClick={() => setOpen(open === i ? null : i)}
+                className="w-full p-8 flex items-center justify-between text-left"
+              >
+                <span className="text-lg font-black text-gray-900 pr-8">{f.q}</span>
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-all ${open === i ? 'bg-brand-orange text-white rotate-180' : 'bg-gray-100 text-gray-400'}`}>
+                  <ChevronDown className="h-4 w-4" />
+                </div>
+              </button>
+              <AnimatePresence>
+                {open === i && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-8 pb-8 text-gray-500 font-medium leading-relaxed">
+                      {f.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="mt-16 bg-gray-900 rounded-[3rem] p-12 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-64 h-64 bg-brand-orange/10 blur-[80px] -translate-x-1/2 -translate-y-1/2"></div>
+          <div className="relative z-10">
+            <h3 className="text-3xl font-black text-white mb-6">ยังลังเลอยู่ใช่ไหม? ให้เราช่วยย้ายเมนูให้ฟรี!</h3>
+            <p className="text-gray-400 mb-8 max-w-xl mx-auto">เพียงส่งรูปเมนูของคุณมา ทีมงาน (และ AI) ของเรายินดีตั้งค่าเริ่มต้นให้คุณพร้อมเปิดร้านได้ในทันที</p>
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="/register" className="bg-brand-orange text-white px-10 py-4 rounded-full font-black hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20">
+                สมัครรับสิทธิ์ย้ายเมนูฟรี
+              </Link>
+              <Link href="https://lin.ee/example" className="bg-white/10 text-white px-10 py-4 rounded-full font-black hover:bg-white/20 transition-all border border-white/10 backdrop-blur-md">
+                คุยกับทีมงานผ่าน LINE
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

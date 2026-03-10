@@ -12,7 +12,11 @@ import {
     MoreVertical,
     Filter,
     Download,
-    CheckCircle2
+    CheckCircle2,
+    Megaphone,
+    ExternalLink,
+    PieChart,
+    Send
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -138,24 +142,22 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid gap-8 lg:grid-cols-3">
-                {/* Revenue Graph Mockup (Animated) */}
+                {/* Revenue Graph */}
                 <motion.div variants={itemVariants} className="lg:col-span-2 rounded-[2.5rem] bg-white p-8 border border-gray-100 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.05)] relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-brand-orange/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
                     <div className="relative z-10 mb-8 flex items-center justify-between">
                         <div>
-                            <h3 className="text-xl font-black tracking-tight text-gray-900">แนวโน้มรายได้ (การเติบโต)</h3>
-                            <p className="text-sm text-gray-500 font-medium">เปรียบเทียบ 7 เดือนย้อนหลัง</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <span className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-600 shadow-sm cursor-pointer hover:bg-gray-50">
-                                <span className="h-2 w-2 rounded-full bg-brand-orange"></span> PRO Revenue
-                            </span>
+                            <h3 className="text-xl font-black tracking-tight text-gray-900 flex items-center gap-3">
+                                <TrendingUp className="h-6 w-6 text-brand-orange" />
+                                แนวโน้มรายได้ระบบ
+                            </h3>
+                            <p className="text-sm text-gray-500 font-medium">ภาพรวม 7 เดือนย้อนหลังรวมทุกร้านค้า</p>
                         </div>
                     </div>
 
                     <div className="h-64 w-full flex items-end gap-3 px-2">
                         {isLoadingTrends ? (
-                            <div className="w-full h-full flex items-center justify-center text-gray-300 font-bold">กำลังโหลดกราฟ...</div>
+                            <div className="w-full h-full flex items-center justify-center text-gray-200 font-bold">กำลังประมวลผลข้อมูล...</div>
                         ) : revenueData.length > 0 ? (
                             revenueData.map((d, i) => {
                                 const maxVal = Math.max(...revenueData.map(v => v.amount), 1);
@@ -165,15 +167,12 @@ export default function AdminDashboard() {
                                         <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg pointer-events-none whitespace-nowrap z-20">
                                             ฿{Number(d.amount).toLocaleString()}
                                         </div>
-                                        <div className="w-full bg-gray-100 rounded-t-xl relative overflow-hidden transition-colors h-full flex items-end">
+                                        <div className="w-full bg-gray-50 rounded-t-xl relative overflow-hidden h-full flex items-end">
                                             <motion.div
                                                 initial={{ height: 0 }}
                                                 animate={{ height: `${heightPercent}%` }}
-                                                transition={{ duration: 1, delay: 0.1 + (i * 0.1), type: "spring" }}
-                                                className="w-full bg-gradient-to-t from-brand-orange to-orange-400 group-hover:from-orange-500 group-hover:to-orange-300 transition-colors relative"
-                                            >
-                                                <div className="absolute inset-0 bg-white/20 w-1/2 rounded-tr-full"></div>
-                                            </motion.div>
+                                                className="w-full bg-gradient-to-t from-brand-orange to-orange-400 group-hover:brightness-110 transition-all"
+                                            />
                                         </div>
                                         <span className="text-[10px] font-black uppercase text-gray-400">{d.month}</span>
                                     </div>
@@ -185,75 +184,53 @@ export default function AdminDashboard() {
                     </div>
                 </motion.div>
 
-                {/* Quick Support Management */}
-                <motion.div variants={itemVariants} className="rounded-[2.5rem] bg-gray-900 p-8 text-white shadow-2xl relative overflow-hidden flex flex-col justify-between">
-                    <div className="absolute -right-10 -bottom-10 h-64 w-64 bg-orange-500/20 rounded-full blur-[80px]"></div>
-                    <div className="absolute top-8 right-8 text-orange-400 opacity-50">
-                        <AlertCircle className="h-10 w-10" />
-                    </div>
+                {/* Top Sellers / Broadcast Quick Actions */}
+                <div className="space-y-6">
+                    <motion.div variants={itemVariants} className="rounded-[2.5rem] bg-gray-900 p-8 text-white shadow-2xl relative overflow-hidden h-[320px] flex flex-col">
+                        <div className="absolute -right-10 -bottom-10 h-64 w-64 bg-orange-500/20 rounded-full blur-[80px]"></div>
+                        <div className="relative z-10 flex-1">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-black tracking-tight flex items-center gap-2">
+                                    <PieChart className="h-5 w-5 text-brand-orange" />
+                                    Top Sellers
+                                </h3>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Month: {new Date().toLocaleString('th-TH', { month: 'long' })}</span>
+                            </div>
 
-                    <div className="relative z-10">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-orange-500/20 px-3 py-1 mb-6 text-xs font-black text-brand-orange uppercase tracking-widest border border-orange-500/30">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
-                            </span>
-                            Urgent Support
-                        </div>
-                        <h3 className="text-2xl font-black mb-2 tracking-tight line-clamp-2 leading-tight">การแจ้งเตือนจาก<br />ผู้เช่าระบบ</h3>
-                        <p className="text-gray-400 text-sm font-medium mb-8">
-                            {stats?.notifications?.urgentSupport?.length > 0
-                                ? `มี ${stats.notifications.urgentSupport.length} รายการที่ต้องดูแลด่วน`
-                                : stats?.notifications?.paymentApprovals > 0
-                                    ? `มี ${stats.notifications.paymentApprovals} รายการรอตรวจสลิป`
-                                    : "ไม่มีรายการที่ต้องดูแลเป็นพิเศษ"}
-                        </p>
-
-                        <div className="space-y-3 mb-8">
-                            {(stats?.notifications?.urgentSupport || []).map((req: any, i: number) => (
-                                <motion.div
-                                    whileHover={{ scale: 1.02 }}
-                                    key={i}
-                                    className="cursor-pointer rounded-2xl bg-white/5 p-4 border border-white/10 hover:bg-white/10 transition-colors backdrop-blur-sm"
-                                >
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-sm font-bold truncate pr-3">{req.name}</span>
-                                        <span className="text-[10px] bg-brand-orange text-white px-2 py-0.5 rounded-full font-black">{req.time}</span>
+                            <div className="space-y-4">
+                                {stats?.topSellers?.map((seller: any, i: number) => (
+                                    <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-2xl border border-white/5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-brand-orange font-black text-xs">#{i + 1}</div>
+                                            <span className="text-sm font-bold truncate max-w-[120px]">{seller.name}</span>
+                                        </div>
+                                        <span className="text-xs font-black text-brand-orange">{seller.orders} Orders</span>
                                     </div>
-                                    <p className="text-xs text-gray-400 truncate">{req.msg}</p>
-                                </motion.div>
-                            ))}
-
-                            {stats?.notifications?.paymentApprovals > 0 && (
-                                <motion.div
-                                    whileHover={{ scale: 1.02 }}
-                                    onClick={() => router.push('/admin/approvals')}
-                                    className="cursor-pointer rounded-2xl bg-orange-500/10 p-4 border border-orange-500/30 hover:bg-orange-500/20 transition-colors backdrop-blur-sm"
-                                >
-                                    <div className="flex justify-between items-center mb-1">
-                                        <span className="text-sm font-bold text-orange-400">💰 รอตรวจสลิปชำระเงิน</span>
-                                        <span className="text-[10px] bg-orange-500 text-white px-2 py-0.5 rounded-full font-black">{stats.notifications.paymentApprovals}</span>
+                                ))}
+                                {(!stats?.topSellers || stats.topSellers.length === 0) && (
+                                    <div className="py-12 text-center opacity-20 bg-white/5 rounded-2xl border border-dashed border-white/10">
+                                        <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                                        <p className="text-xs font-bold">No data yet</p>
                                     </div>
-                                    <p className="text-xs text-orange-300 truncate">มีรายการขอต่ออายุแพ็กเกจรอการอนุมัติ</p>
-                                </motion.div>
-                            )}
-
-                            {(!stats?.notifications?.urgentSupport || stats.notifications.urgentSupport.length === 0) && stats?.notifications?.paymentApprovals === 0 && (
-                                <div className="p-8 text-center border-2 border-dashed border-white/5 rounded-3xl opacity-30">
-                                    <CheckCircle2 className="h-8 w-8 mx-auto mb-2" />
-                                    <p className="text-xs font-bold">All clear!</p>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    </motion.div>
 
-                    <button
-                        onClick={() => router.push('/admin/helpdesk')}
-                        className="relative z-10 w-full rounded-2xl bg-white text-gray-900 py-4 font-black transition-all hover:bg-gray-100 flex items-center justify-center gap-2 active:scale-95 shadow-xl"
-                    >
-                        จัดการข้อร้องเรียน <ArrowUpRight className="h-4 w-4" />
-                    </button>
-                </motion.div>
+                    <motion.div variants={itemVariants} className="rounded-[2.5rem] bg-orange-500 p-8 text-white shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 opacity-10 -translate-y-4 translate-x-4">
+                            <Megaphone className="h-32 w-32 rotate-12 transition-transform group-hover:rotate-0" />
+                        </div>
+                        <h3 className="text-xl font-black mb-2 relative z-10">Broadcast</h3>
+                        <p className="text-orange-100 text-sm font-medium mb-6 relative z-10">ประกาศข่าวสารด่วนให้ทุกร้านทราบ</p>
+                        <button
+                            onClick={() => router.push('/admin/broadcast')}
+                            className="bg-white text-orange-600 w-full py-4 rounded-2xl font-black shadow-lg hover:shadow-xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            เริ่มการประกาศ <Send className="h-4 w-4" />
+                        </button>
+                    </motion.div>
+                </div>
             </div>
 
             {/* Tenant Management Table */}

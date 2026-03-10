@@ -99,6 +99,8 @@ export async function POST(request: NextRequest) {
                 items: body.items as any,
                 totalAmount: finalTotal, // Use final total
                 paymentMethod: body.payMethod,
+                // @ts-ignore
+                orderType: body.orderType || "pickup",
                 tenantId: tenant.id,
                 status: "new",
             }
@@ -113,6 +115,31 @@ export async function POST(request: NextRequest) {
                 ...body,
                 orderId,
             });
+        }
+
+        // 5. Advanced Inventory: Deduct Stock
+        try {
+            for (const item of body.items) {
+                // Find product by name within the tenant
+                const product = await prisma.product.findFirst({
+                    where: {
+                        tenantId: tenant.id,
+                        name: item.name
+                    }
+                });
+
+                // @ts-ignore
+                if (product && product.trackStock) {
+                    await prisma.product.update({
+                        where: { id: product.id },
+                        // @ts-ignore
+                        data: { stockQuantity: { decrement: item.qty || 1 } }
+                    });
+                }
+            }
+        } catch (stockErr) {
+            console.error("Stock deduction error:", stockErr);
+            // Non-blocking for the order
         }
 
         return NextResponse.json({ success: true, orderId: (savedOrder as any).orderId }, { status: 201 });

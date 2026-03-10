@@ -25,11 +25,40 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
     const [isCheckingPromo, setIsCheckingPromo] = useState(false);
     const [promoError, setPromoError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
+    const [isAiLoading, setIsAiLoading] = useState(false);
+
+    const { addToCart } = useCart();
 
     const subtotal = cartTotal;
     const deliveryFee = orderMode === "delivery" ? 30 : 0;
     const total = Math.max(0, subtotal + deliveryFee - promoDiscount);
     const isFormValid = !!(name.trim() && phone.trim() && (orderMode === "pickup" || address.trim()));
+
+    // AI Upsell Logic
+    React.useEffect(() => {
+        if (cart.length > 0) {
+            const fetchUpsell = async () => {
+                setIsAiLoading(true);
+                try {
+                    const res = await fetch(`/api/ai/upsell`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ cartItems: cart, shopSlug: shop_slug })
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        setAiRecommendations(data.recommendations || []);
+                    }
+                } catch (err) {
+                    console.error("AI Upsell error:", err);
+                } finally {
+                    setIsAiLoading(false);
+                }
+            };
+            fetchUpsell();
+        }
+    }, [cart.length]); // Re-fetch only if number of items changes to avoid loops
 
     const handleApplyPromo = async () => {
         if (!promoCode.trim()) return;
@@ -213,6 +242,45 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                             </div>
                         </div>
                     </section>
+
+                    {/* AI Upsell Section */}
+                    {aiRecommendations.length > 0 && (
+                        <section className="bg-orange-50 border border-orange-100 rounded-2xl p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <p className="text-xs font-black text-orange-600 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="flex h-2 w-2 rounded-full bg-orange-500 animate-pulse"></span>
+                                    ทานคู่กับอะไรดี? ✨
+                                </p>
+                            </div>
+                            <div className="space-y-3">
+                                {aiRecommendations.map(item => (
+                                    <div key={item.id} className="flex items-center justify-between bg-white/50 backdrop-blur-sm p-3 rounded-xl border border-orange-200/50">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            {item.imageUrl && <img src={item.imageUrl} className="h-10 w-10 rounded-lg object-cover" />}
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-bold text-gray-900 truncate uppercase tracking-tight">{item.name}</p>
+                                                <p className="text-xs text-orange-600 font-black">฿{item.price}</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => addToCart({
+                                                id: item.id + "-upsell",
+                                                productId: item.id,
+                                                name: item.name,
+                                                price: Number(item.price),
+                                                qty: 1,
+                                                options: { spicy: "ไม่ระบุ", addons: [], note: "AI Upsell" },
+                                                imageUrl: item.imageUrl
+                                            })}
+                                            className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter shadow-sm active:scale-95 transition-all"
+                                        >
+                                            เพิ่ม
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
 
                     {/* Payment method */}
                     <section className="bg-white border border-gray-100 rounded-2xl p-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, use } from "react";
+import Link from "next/link";
 import { Plus, Pencil, Eye, EyeOff, X, Check, ChevronDown, Trash2, Loader2, Save, Sparkles, Upload, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -323,6 +324,10 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
                             <Sparkles className="h-3 w-3" /> AI Onboarding
                         </div>
                     </label>
+                    <Link href={`/menu/${shop_slug}/admin/kitchen`}
+                        className="flex items-center gap-1.5 bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-2 rounded-xl border border-blue-100 hover:bg-blue-100 transition-all">
+                        <Loader2 className="h-3 w-3" /> Real-time Orders
+                    </Link>
                     <button onClick={() => setShowCategoryMgr(!showCategoryMgr)}
                         className={`h-10 w-10 flex items-center justify-center rounded-xl transition-all border ${showCategoryMgr ? "bg-purple-50 border-purple-200 text-purple-600" : "bg-white border-gray-200 text-gray-500"}`}>
                         <ChevronDown className={`h-5 w-5 transition-transform ${showCategoryMgr ? "rotate-180" : ""}`} />

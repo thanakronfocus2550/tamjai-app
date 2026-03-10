@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
-import { ShoppingBag, Clock, ChevronLeft, Plus, Minus, X, ChevronDown, MapPin, Bike, Users, Store, Loader2, ExternalLink } from "lucide-react";
+import { ShoppingBag, Clock, ChevronLeft, Plus, Minus, X, ChevronDown, MapPin, Bike, Users, Store, Loader2, ExternalLink, Search, Flame } from "lucide-react";
 import { useCart, CartItem as GlobalCartItem } from "@/context/CartContext";
 
 // ─── Types ─────────────────────────────────────────────
@@ -25,6 +25,7 @@ interface MenuItem {
     categoryId: string;
     category?: { name: string };
     popular?: boolean;
+    isRecommended?: boolean;
     sold?: number;
 }
 
@@ -210,9 +211,14 @@ export default function MenuPage({ params, searchParams }: {
     const [categories, setCategories] = useState<Category[]>([]);
     const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isOpen, setIsOpen] = useState(true); // Default to true, update on client
+    const [isOpen, setIsOpen] = useState(true);
     const [mounted, setMounted] = useState(false);
     const [settings, setSettings] = useState<any>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [aiRecommendations, setAiRecommendations] = useState<MenuItem[]>([]);
+    const [isAiLoading, setIsAiLoading] = useState(false);
+    const [note, setNote] = useState(""); // Add missing note state if needed
+    const [qty, setQty] = useState(1); // Add missing qty state if needed
 
     // Initial check on mount
     useEffect(() => {
@@ -309,6 +315,13 @@ export default function MenuPage({ params, searchParams }: {
         return () => el.removeEventListener("scroll", handler);
     }, []);
 
+    const filteredMenuItems = menuItems.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const recommendedItems = menuItems.filter(m => m.isRecommended);
+
     const ORDER_TYPES: { id: OrderType; label: string; icon: React.ReactNode }[] = [
         { id: "delivery", label: "เดลิเวอรี่", icon: <Bike className="h-4 w-4" /> },
         { id: "pickup", label: "รับเอง", icon: <Store className="h-4 w-4" /> },
@@ -328,39 +341,56 @@ export default function MenuPage({ params, searchParams }: {
                 {/* Mobile frame */}
                 <div className="w-full max-w-md lg:shadow-2xl bg-white flex flex-col min-h-screen relative">
 
-                    {/* ── HEADER ── */}
-                    <header className="bg-white border-b border-gray-100 px-4 pt-5 pb-3">
-                        <div className="flex items-center gap-3">
-                            {/* Logo */}
-                            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-400 flex items-center justify-center text-white font-black text-2xl shrink-0 shadow-md shadow-orange-200">
-                                {storeName.charAt(0)}
+                    {/* ── HERO BANNER ── */}
+                    <div className="relative h-48 sm:h-56 bg-gray-900 overflow-hidden shrink-0">
+                        {settings?.bannerUrl ? (
+                            <img src={settings.bannerUrl} alt="Store Banner" className="w-full h-full object-cover opacity-80" />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-orange-600 to-orange-400 opacity-60 flex items-center justify-center">
+                                <Store className="h-20 w-20 text-white/20" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <h1 className="font-bold text-gray-900 text-lg leading-tight truncate">{storeName}</h1>
-                                    <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${isOpen ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"}`}>
-                                        <span className={`h-1.5 w-1.5 rounded-full ${isOpen ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}></span>
-                                        {isOpen ? "เปิดอยู่" : "ปิดแล้ว"}
-                                    </span>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+
+                        {/* Store Overlay */}
+                        <div className="absolute bottom-4 left-4 right-4 flex items-end gap-3 text-white">
+                            <div className="h-16 w-16 rounded-2xl bg-white p-1 shadow-xl shrink-0">
+                                <div className="w-full h-full rounded-xl bg-gradient-to-br from-orange-500 to-orange-400 flex items-center justify-center text-white font-black text-2xl">
+                                    {settings?.logoUrl ? <img src={settings.logoUrl} className="w-full h-full object-cover rounded-xl" /> : storeName.charAt(0)}
                                 </div>
-                                <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-                                    <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> 09:00 – 17:00</span>
-                                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> กรุงเทพฯ</span>
-                                </div>
+                            </div>
+                            <div className="flex-1 pb-1">
+                                <h1 className="text-xl font-black leading-tight drop-shadow-md">{storeName}</h1>
+                                <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mt-0.5 line-clamp-1">
+                                    {settings?.description || "ความอร่อยที่คุณออกแบบเองได้ ตลอด 24 ชม."}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ── STORE INFO & TABS ── */}
+                    <header className="bg-white border-b border-gray-100 px-4 py-4">
+                        <div className="flex items-center justify-between gap-4 mb-4">
+                            <div className="flex items-center gap-3 text-xs font-bold text-gray-500">
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${isOpen ? "bg-emerald-50 text-emerald-600" : "bg-gray-100 text-gray-500"}`}>
+                                    <span className={`h-1.5 w-1.5 rounded-full ${isOpen ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`}></span>
+                                    {isOpen ? "OPEN NOW" : "CLOSED"}
+                                </span>
+                                <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> 09:00 – 17:00</span>
                             </div>
                         </div>
 
                         {/* Order type tabs */}
-                        <div className="flex mt-4 bg-gray-100 p-1 rounded-xl gap-0.5">
+                        <div className="flex bg-gray-100 p-1 rounded-2xl gap-0.5">
                             {ORDER_TYPES.filter(t => {
                                 if (t.id === "delivery") return settings?.deliveryEnabled ?? true;
                                 if (t.id === "pickup") return settings?.pickupEnabled ?? true;
-                                return true; // Table is always enabled if from QR
+                                return true;
                             }).map(t => (
                                 <button
                                     key={t.id}
                                     onClick={() => setOrderType(t.id)}
-                                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${orderType === t.id ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${orderType === t.id ? "bg-white text-orange-600 shadow-lg shadow-orange-100" : "text-gray-500 hover:text-gray-700"}`}
                                 >
                                     {t.icon}
                                     {t.label}
@@ -368,20 +398,31 @@ export default function MenuPage({ params, searchParams }: {
                             ))}
                         </div>
 
+                        {/* Search Bar */}
+                        <div className="mt-4 relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                            <input
+                                type="text"
+                                placeholder="ค้นหาเมนูที่คุณอยากทาน..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="w-full bg-gray-50 border-none rounded-2xl py-3.5 pl-11 pr-4 text-sm font-semibold focus:ring-2 focus:ring-orange-100 transition-all placeholder:text-gray-400"
+                            />
+                        </div>
+
                         {/* Delivery address (shown only when delivery) */}
                         {orderType === "delivery" && (
-                            <div className="mt-3 flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2">
+                            <div className="mt-3 flex items-center gap-3 bg-orange-50/50 border border-orange-100/50 rounded-2xl px-4 py-3">
                                 <MapPin className="h-4 w-4 text-orange-500 shrink-0" />
                                 <input
                                     type="text"
-                                    placeholder="ใส่ที่อยู่จัดส่งของคุณ..."
+                                    placeholder="เพิ่มพิกัดจัดส่งความอร่อย..."
                                     value={address}
                                     onChange={e => setAddress(e.target.value)}
-                                    className="flex-1 bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none"
+                                    className="flex-1 bg-transparent text-sm font-semibold text-gray-700 placeholder-gray-400 outline-none"
                                 />
                             </div>
                         )}
-
                         {/* Table info (shown when table mode) */}
                         {orderType === "table" && tableNumber && (
                             <div className="mt-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-sm text-blue-700 font-medium flex items-center gap-2">
@@ -407,63 +448,105 @@ export default function MenuPage({ params, searchParams }: {
                     </div>
 
                     {/* ── MENU LIST ── */}
-                    <div ref={contentRef} className="flex-1 overflow-y-auto pb-28 px-4 pt-2 scrollbar-hide">
+                    <div ref={contentRef} className="flex-1 overflow-y-auto pb-28 pt-2 scrollbar-hide">
                         {loading ? (
                             <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                                 <Loader2 className="h-10 w-10 animate-spin text-orange-500 mb-4" />
                                 <p className="text-sm font-medium">กำลังโหลดความอร่อย...</p>
                             </div>
                         ) : (
-                            categories.map(cat => {
-                                const items = menuItems.filter(m => m.categoryId === cat.id);
-                                if (!items.length) return null;
-                                return (
-                                    <div key={cat.id} ref={el => { categoryRefs.current[cat.id] = el; }} className="mt-4">
-                                        <h2 className="text-base font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                            {cat.name}
-                                            <span className="h-px flex-1 bg-gray-100"></span>
-                                        </h2>
-                                        <div className="grid gap-3">
-                                            {items.map(item => (
+                            <>
+                                {/* Recommended Section */}
+                                {recommendedItems.length > 0 && searchQuery === "" && (
+                                    <section className="mt-6">
+                                        <div className="px-4 flex items-center justify-between mb-3 text-orange-600">
+                                            <h2 className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                                                <Flame className="h-4 w-4" /> RECOMMENDED
+                                            </h2>
+                                        </div>
+                                        <div className="flex gap-4 overflow-x-auto px-4 pb-4 scrollbar-hide">
+                                            {recommendedItems.map(item => (
                                                 <button
                                                     key={item.id}
                                                     onClick={() => setSelectedItem(item)}
-                                                    className="flex gap-3 bg-white rounded-2xl p-2.5 border border-gray-100 hover:border-orange-200 hover:shadow-md transition-all text-left w-full group"
+                                                    className="w-40 shrink-0 bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm active:scale-95 transition-all text-left"
                                                 >
-                                                    {/* Image */}
-                                                    <div className="h-24 w-24 rounded-xl overflow-hidden shrink-0 bg-gray-100 relative">
-                                                        {item.imageUrl ? (
-                                                            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-200">
-                                                                <ShoppingBag className="h-8 w-8" />
-                                                            </div>
-                                                        )}
-                                                        {item.popular && (
-                                                            <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">ฮิต</div>
-                                                        )}
+                                                    <div className="h-40 bg-gray-100 relative">
+                                                        {item.imageUrl ? <img src={item.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><ShoppingBag className="text-orange-200" /></div>}
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                                                        <span className="absolute bottom-2 left-2 font-black text-white text-base">฿{item.price}</span>
                                                     </div>
-
-                                                    {/* Info */}
-                                                    <div className="flex-1 flex flex-col justify-between py-0.5 min-w-0">
-                                                        <div>
-                                                            <h3 className="font-semibold text-gray-900 text-sm leading-snug">{item.name}</h3>
-                                                            {item.description && <p className="text-xs text-gray-500 mt-0.5 line-clamp-2 leading-relaxed">{item.description}</p>}
-                                                            {item.sold && <p className="text-[10px] text-gray-400 mt-1">ขายไปแล้ว {item.sold.toLocaleString()} จาน</p>}
-                                                        </div>
-                                                        <div className="flex items-center justify-between mt-2">
-                                                            <span className="font-bold text-gray-900 text-base">฿{item.price}</span>
-                                                            <div className="h-8 w-8 bg-orange-500 rounded-full flex items-center justify-center text-white shadow-sm shadow-orange-200 group-hover:scale-110 active:scale-95 transition-transform">
-                                                                <Plus className="h-4 w-4" />
-                                                            </div>
-                                                        </div>
+                                                    <div className="p-3">
+                                                        <h3 className="text-xs font-black text-gray-900 line-clamp-1">{item.name}</h3>
+                                                        <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-tighter">Highly Recommended</p>
                                                     </div>
                                                 </button>
                                             ))}
                                         </div>
-                                    </div>
-                                );
-                            })
+                                    </section>
+                                )}
+
+                                <div className="px-4">
+                                    {categories.map(cat => {
+                                        const items = filteredMenuItems.filter(m => m.categoryId === cat.id);
+                                        if (!items.length) return null;
+                                        return (
+                                            <div key={cat.id} ref={el => { categoryRefs.current[cat.id] = el; }} className="mt-6">
+                                                <h2 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-3">
+                                                    {cat.name}
+                                                    <span className="h-px flex-1 bg-gray-100"></span>
+                                                </h2>
+                                                <div className="grid gap-3">
+                                                    {items.map(item => (
+                                                        <button
+                                                            key={item.id}
+                                                            onClick={() => setSelectedItem(item)}
+                                                            className="flex gap-4 bg-white rounded-3xl p-3 border border-gray-100 hover:border-orange-200 active:scale-[0.98] transition-all text-left w-full group shadow-sm hover:shadow-md"
+                                                        >
+                                                            {/* Image */}
+                                                            <div className="h-28 w-28 rounded-2xl overflow-hidden shrink-0 bg-gray-100 relative">
+                                                                {item.imageUrl ? (
+                                                                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                                                ) : (
+                                                                    <div className="w-full h-full flex items-center justify-center bg-orange-50 text-orange-200">
+                                                                        <ShoppingBag className="h-10 w-10" />
+                                                                    </div>
+                                                                )}
+                                                                {item.popular && (
+                                                                    <div className="absolute top-2 left-2 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider">HOT</div>
+                                                                )}
+                                                            </div>
+                                                            {/* Info */}
+                                                            <div className="flex-1 flex flex-col justify-between py-1 min-w-0">
+                                                                <div>
+                                                                    <h3 className="font-black text-gray-900 text-sm leading-tight group-hover:text-orange-600 transition-colors uppercase tracking-tight">{item.name}</h3>
+                                                                    {item.description && <p className="text-xs font-semibold text-gray-400 mt-1 line-clamp-2 leading-relaxed">{item.description}</p>}
+                                                                </div>
+                                                                <div className="flex items-end justify-between">
+                                                                    <span className="font-black text-gray-900 text-lg tracking-tighter">฿{item.price}</span>
+                                                                    <div className="h-10 w-10 bg-gray-900 rounded-2xl flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform">
+                                                                        <Plus className="h-5 w-5" />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {filteredMenuItems.length === 0 && searchQuery !== "" && (
+                                        <div className="py-20 text-center">
+                                            <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Search className="h-8 w-8 text-gray-300" />
+                                            </div>
+                                            <p className="font-bold text-gray-500">ไม่พบเมนู "{searchQuery}"</p>
+                                            <button onClick={() => setSearchQuery("")} className="text-orange-500 font-bold text-sm mt-2">ล้างการค้นหา</button>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
                         )}
 
                         {/* Store Footer & Report */}

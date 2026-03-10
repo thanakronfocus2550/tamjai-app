@@ -9,10 +9,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing data" }, { status: 400 });
         }
 
-        // @ts-ignore
         const tenant = await prisma.tenant.update({
             where: { slug: shopSlug },
-            // @ts-ignore
             data: { lineUserId }
         });
 
