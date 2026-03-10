@@ -5,9 +5,17 @@ import Link from "next/link";
 import { Plus, Pencil, Eye, EyeOff, X, Check, ChevronDown, Trash2, Loader2, Save, Sparkles, Upload, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-interface Addon {
-    name: string;
+interface Option {
+    label: string;
     price: number;
+}
+
+interface OptionGroup {
+    id: string;
+    title: string;
+    required: boolean;
+    allowMultiple: boolean;
+    options: Option[];
 }
 
 interface Category {
@@ -24,7 +32,7 @@ interface MenuItem {
     categoryId: string;
     isAvailable: boolean;
     imageUrl?: string;
-    addons: Addon[];
+    addons: OptionGroup[];
 }
 
 export default function MenuManagePage({ params }: { params: Promise<{ shop_slug: string }> }) {
@@ -110,7 +118,7 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
         }
     };
 
-    const updateAddons = async (itemId: string, newAddons: Addon[]) => {
+    const updateAddons = async (itemId: string, newAddons: OptionGroup[]) => {
         setItems(prev => prev.map(i => i.id === itemId ? { ...i, addons: newAddons } : i));
 
         try {
@@ -656,65 +664,138 @@ function EditInline({ item, onSave, onCancel }: { item: MenuItem; onSave: (n: st
 
 function AddonsPanel({ itemId, addons, onUpdate }: {
     itemId: string;
-    addons: Addon[];
-    onUpdate: (addons: Addon[]) => void;
+    addons: OptionGroup[];
+    onUpdate: (addons: OptionGroup[]) => void;
 }) {
-    const [newName, setNewName] = useState("");
-    const [newPrice, setNewPrice] = useState("");
+    const [isAddingGroup, setIsAddingGroup] = useState(false);
+    const [groupName, setGroupName] = useState("");
+    const [isRequired, setIsRequired] = useState(false);
+    const [isMultiple, setIsMultiple] = useState(false);
 
-    const handleAdd = () => {
-        if (!newName.trim()) return;
-        onUpdate([...addons, { name: newName.trim(), price: +newPrice || 0 }]);
-        setNewName("");
-        setNewPrice("");
+    const [optionName, setOptionName] = useState("");
+    const [optionPrice, setOptionPrice] = useState("");
+    const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+
+    const addGroup = () => {
+        if (!groupName.trim()) return;
+        const newGroup: OptionGroup = {
+            id: "opt_" + Math.random().toString(36).substr(2, 9),
+            title: groupName.trim(),
+            required: isRequired,
+            allowMultiple: isMultiple,
+            options: []
+        };
+        onUpdate([...addons, newGroup]);
+        setGroupName("");
+        setIsAddingGroup(false);
     };
 
-    const handleRemove = (idx: number) => {
-        onUpdate(addons.filter((_, i) => i !== idx));
+    const removeGroup = (id: string) => {
+        onUpdate(addons.filter(g => g.id !== id));
+    };
+
+    const addOption = (groupId: string) => {
+        if (!optionName.trim()) return;
+        const newOption = { label: optionName.trim(), price: +optionPrice || 0 };
+        onUpdate(addons.map(g => g.id === groupId ? { ...g, options: [...g.options, newOption] } : g));
+        setOptionName("");
+        setOptionPrice("");
+    };
+
+    const removeOption = (groupId: string, optionIdx: number) => {
+        onUpdate(addons.map(g => g.id === groupId ? { ...g, options: g.options.filter((_, i) => i !== optionIdx) } : g));
     };
 
     return (
-        <div className="border-t border-gray-100 bg-gray-50/60 px-4 py-3 space-y-2">
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-wider">ตัวเลือกเพิ่มเติม (ไม่บังคับ)</p>
+        <div className="border-t border-gray-100 bg-gray-50/60 px-4 py-4 space-y-4">
+            <div className="flex items-center justify-between">
+                <p className="text-xs font-black text-gray-500 uppercase tracking-widest">การจัดการตัวเลือกเมนู</p>
+                <button
+                    onClick={() => setIsAddingGroup(!isAddingGroup)}
+                    className="text-[10px] font-bold bg-purple-500 text-white px-2 py-1 rounded-lg flex items-center gap-1"
+                >
+                    <Plus className="h-3 w-3" /> เพิ่มกลุ่มตัวเลือก
+                </button>
+            </div>
 
-            {addons.length === 0 && (
-                <p className="text-xs text-gray-400 italic">ยังไม่มีตัวเลือก — เพิ่มได้ด้านล่าง</p>
+            {isAddingGroup && (
+                <div className="bg-white p-3 rounded-2xl border border-purple-100 shadow-sm space-y-2">
+                    <input
+                        type="text" placeholder="ชื่อกลุ่ม เช่น เลือกระดับความเผ็ด" value={groupName}
+                        onChange={e => setGroupName(e.target.value)}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-purple-400 focus:outline-none"
+                    />
+                    <div className="flex gap-4 px-1">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={isRequired} onChange={e => setIsRequired(e.target.checked)} className="rounded text-purple-600" />
+                            <span className="text-xs font-semibold text-gray-600">ต้องเลือก (Required)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" checked={isMultiple} onChange={e => setIsMultiple(e.target.checked)} className="rounded text-purple-600" />
+                            <span className="text-xs font-semibold text-gray-600">เลือกได้หลายอย่าง</span>
+                        </label>
+                    </div>
+                    <div className="flex gap-2">
+                        <button onClick={addGroup} className="flex-1 bg-purple-500 text-white py-2 rounded-xl text-xs font-bold">เพิ่มกลุ่ม</button>
+                        <button onClick={() => setIsAddingGroup(false)} className="px-4 py-2 border border-gray-200 rounded-xl text-xs font-bold text-gray-400">ยกเลิก</button>
+                    </div>
+                </div>
             )}
 
-            {/* Existing addons */}
-            <div className="space-y-1">
-                {addons.map((a, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-white rounded-xl px-3 py-2 border border-gray-100">
-                        <span className="text-sm text-gray-800 font-medium">{a.name}</span>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-orange-500">{a.price > 0 ? "+" + a.price : "ฟรี"}</span>
-                            <button onClick={() => handleRemove(idx)}
-                                className="h-6 w-6 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors">
+            <div className="space-y-3">
+                {addons.length === 0 && !isAddingGroup && (
+                    <p className="text-xs text-gray-400 text-center py-2">ยังไม่มีกลุ่มตัวเลือก — เช่น ความเผ็ด, ท็อปปิ้ง</p>
+                )}
+
+                {addons.map((group) => (
+                    <div key={group.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
+                        <div className="bg-gray-50/80 px-3 py-2 flex items-center justify-between border-b border-gray-50">
+                            <div>
+                                <p className="text-sm font-bold text-gray-900">{group.title}</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                                    {group.required ? "REQUIRED" : "OPTIONAL"} · {group.allowMultiple ? "MULTIPLE" : "SINGLE"}
+                                </p>
+                            </div>
+                            <button onClick={() => removeGroup(group.id)} className="text-gray-300 hover:text-red-500 p-1">
                                 <Trash2 className="h-3.5 w-3.5" />
                             </button>
                         </div>
+
+                        <div className="p-3 space-y-2">
+                            {group.options.map((opt, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-sm py-1 border-b border-gray-50 last:border-0">
+                                    <span className="text-gray-700 font-medium">{opt.label}</span>
+                                    <div className="flex items-center gap-3">
+                                        <span className="text-orange-500 font-bold">+{opt.price}</span>
+                                        <button onClick={() => removeOption(group.id, idx)} className="text-gray-300 hover:text-red-400">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+
+                            <div className="pt-2 flex gap-2">
+                                <input
+                                    type="text" placeholder="ชื่อตัวเลือก เช่น ไข่ดาว" value={activeGroupId === group.id ? optionName : ""}
+                                    onFocus={() => setActiveGroupId(group.id)}
+                                    onChange={e => setOptionName(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && addOption(group.id)}
+                                    className="flex-1 border border-gray-100 bg-gray-50/50 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-purple-300"
+                                />
+                                <input
+                                    type="number" placeholder="+฿" value={activeGroupId === group.id ? optionPrice : ""}
+                                    onFocus={() => setActiveGroupId(group.id)}
+                                    onChange={e => setOptionPrice(e.target.value)}
+                                    onKeyDown={e => e.key === "Enter" && addOption(group.id)}
+                                    className="w-14 border border-gray-100 bg-gray-50/50 rounded-xl px-2 py-1.5 text-xs text-gray-800 text-center focus:outline-none focus:border-purple-300"
+                                />
+                                <button onClick={() => addOption(group.id)} className="bg-purple-50 text-purple-500 px-2 rounded-xl border border-purple-100 hover:bg-purple-500 hover:text-white transition-all">
+                                    <Plus className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 ))}
-            </div>
-
-            {/* Add new addon */}
-            <div className="flex gap-2">
-                <input
-                    type="text" placeholder="ชื่อตัวเลือก เช่น ไข่ดาว" value={newName}
-                    onChange={e => setNewName(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleAdd()}
-                    className="flex-1 border border-gray-200 bg-white rounded-xl px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-purple-400"
-                />
-                <input
-                    type="number" placeholder="+฿" value={newPrice}
-                    onChange={e => setNewPrice(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleAdd()}
-                    className="w-16 border border-gray-200 bg-white rounded-xl px-2 py-2 text-sm text-gray-800 focus:outline-none focus:border-purple-400"
-                />
-                <button onClick={handleAdd}
-                    className="h-9 w-9 bg-purple-500 text-white rounded-xl flex items-center justify-center hover:bg-purple-600 transition-colors shrink-0">
-                    <Plus className="h-4 w-4" />
-                </button>
             </div>
         </div>
     );

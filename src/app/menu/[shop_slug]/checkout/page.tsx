@@ -208,11 +208,23 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                                         <span className="font-bold text-orange-500 text-sm shrink-0">{item.qty}x</span>
                                         <div>
                                             <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                                            <p className="text-xs text-gray-400 mt-0.5">
-                                                เผ็ด: {item.options.spicy}
-                                                {item.options.addons.length > 0 && " · " + item.options.addons.join(", ")}
-                                                {item.options.note && " · \"" + item.options.note + "\""}
-                                            </p>
+                                            <div className="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-1">
+                                                {Object.entries(item.options).map(([group, labels]) => {
+                                                    if (group === "note") return null;
+                                                    const selected = Array.isArray(labels) ? labels : [labels];
+                                                    if (selected.length === 0) return null;
+                                                    return (
+                                                        <span key={group} className="bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100">
+                                                            <span className="text-gray-500">{group}:</span> {selected.join(", ")}
+                                                        </span>
+                                                    );
+                                                })}
+                                                {item.options.note && (
+                                                    <span className="text-orange-400 italic font-medium w-full mt-0.5">
+                                                        "{item.options.note}"
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <span className="font-semibold text-sm text-gray-800 shrink-0">{"฿" + (item.price * item.qty)}</span>
@@ -269,7 +281,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                                                 name: item.name,
                                                 price: Number(item.price),
                                                 qty: 1,
-                                                options: { spicy: "ไม่ระบุ", addons: [], note: "AI Upsell" },
+                                                options: { note: "AI Upsell" },
                                                 imageUrl: item.imageUrl
                                             })}
                                             className="bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-tighter shadow-sm active:scale-95 transition-all"

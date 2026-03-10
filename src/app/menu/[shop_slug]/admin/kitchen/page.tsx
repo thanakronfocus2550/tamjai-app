@@ -12,6 +12,7 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [notifEnabled, setNotifEnabled] = useState(false);
+    const [alertsActive, setAlertsActive] = useState(true);
     const prevNewCount = useRef(0);
 
     const fetchOrders = async () => {
@@ -23,7 +24,7 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                 const activeOrders = data.filter((o: any) => ["new", "prepping", "ready"].includes(o.status));
 
                 const newOrders = data.filter((o: any) => o.status === "new");
-                if (newOrders.length > prevNewCount.current && !isLoading) {
+                if (newOrders.length > prevNewCount.current && !isLoading && alertsActive) {
                     playOrderSound();
                     showBrowserNotification(`👨‍🍳 ออเดอร์ใหม่!`, `มีรายการใหม่รอให้เชฟจัดการครับ`);
                 }
@@ -77,10 +78,20 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-xs ${notifEnabled ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
-                        <Bell className="h-4 w-4" />
-                        {notifEnabled ? "ALERTS ON" : "ALERTS OFF"}
-                    </div>
+                    <button
+                        onClick={() => {
+                            if (!notifEnabled) {
+                                requestNotificationPermission().then(() => {
+                                    setNotifEnabled(Notification.permission === "granted");
+                                });
+                            }
+                            setAlertsActive(!alertsActive);
+                        }}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-xs transition-all active:scale-95 ${alertsActive && notifEnabled ? "bg-emerald-500 text-white" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}
+                    >
+                        <Bell className={`h-4 w-4 ${alertsActive && notifEnabled ? "animate-bounce" : ""}`} />
+                        {alertsActive && notifEnabled ? "ALERTS ON" : "ALERTS OFF"}
+                    </button>
                     <div className="bg-white/10 px-4 py-2 rounded-2xl font-black text-xs text-orange-400">
                         {orders.length} ACTIVE
                     </div>
@@ -135,16 +146,15 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-black text-base leading-tight uppercase tracking-tight">{item.name}</p>
                                                     <div className="flex flex-wrap gap-1 mt-1.5">
-                                                        {(item.options as any)?.variants && (
-                                                            <span className="text-[9px] font-bold bg-white/10 text-white/60 px-2 py-0.5 rounded-lg uppercase tracking-widest">
-                                                                {(item.options as any).variants}
-                                                            </span>
-                                                        )}
-                                                        {(item.options as any)?.addons?.map((a: string) => (
-                                                            <span key={a} className="text-[9px] font-bold bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-lg uppercase tracking-widest">
-                                                                + {a}
-                                                            </span>
-                                                        ))}
+                                                        {Object.entries(item.options || {}).map(([group, labels]) => {
+                                                            if (group === "note") return null;
+                                                            const selected = Array.isArray(labels) ? labels : [labels];
+                                                            return selected.map((label, idx) => (
+                                                                <span key={group + idx} className="text-[9px] font-black bg-white/10 text-white/80 px-2 py-1 rounded-lg uppercase tracking-widest border border-white/5">
+                                                                    <span className="text-orange-500">{group}:</span> {label}
+                                                                </span>
+                                                            ));
+                                                        })}
                                                         {item.note && (
                                                             <span className="text-[10px] font-black bg-orange-500 text-white px-2 py-1 rounded-lg uppercase tracking-tighter block w-full mt-1">
                                                                 📝 {item.note}

@@ -8,7 +8,7 @@ export interface CartItem {
     name: string;
     price: number;
     qty: number;
-    options: { spicy: string; addons: string[]; note: string };
+    options: { [key: string]: any }; // Flexible options (e.g., { "ระดับความเผ็ด": ["เผ็ดกลาง"], "note": "..." })
     imageUrl?: string;
 }
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, use } from "react";
 import Link from "next/link";
-import { ShoppingBag, Clock, ChevronLeft, Plus, Minus, X, ChevronDown, MapPin, Bike, Users, Store, Loader2, ExternalLink, Search, Flame } from "lucide-react";
+import { ShoppingBag, Clock, ChevronLeft, Plus, Minus, X, ChevronDown, MapPin, Bike, Users, Store, Loader2, ExternalLink, Search, Flame, Check } from "lucide-react";
 import { useCart, CartItem as GlobalCartItem } from "@/context/CartContext";
 
 // ─── Types ─────────────────────────────────────────────
@@ -13,7 +13,21 @@ interface CartItem {
     name: string;
     price: number;
     qty: number;
-    options: { spicy: string; addons: string[]; note: string };
+    options: { [groupTitle: string]: string[] }; // Group Title -> Array of selected labels
+    note: string;
+}
+
+interface Option {
+    label: string;
+    price: number;
+}
+
+interface OptionGroup {
+    id: string;
+    title: string;
+    required: boolean;
+    allowMultiple: boolean;
+    options: Option[];
 }
 
 interface MenuItem {
@@ -27,6 +41,7 @@ interface MenuItem {
     popular?: boolean;
     isRecommended?: boolean;
     sold?: number;
+    addons: OptionGroup[];
 }
 
 interface Category {
@@ -54,24 +69,64 @@ function AddonsModal({
 }: {
     item: MenuItem;
     onClose: () => void;
-    onAdd: (item: MenuItem, options: CartItem["options"], qty: number) => void;
+    onAdd: (item: MenuItem, options: CartItem["options"], note: string, qty: number) => void;
 }) {
-    const [spicy, setSpicy] = useState("กลาง");
-    const [addons, setAddons] = useState<string[]>([]);
+    // selections: { [groupTitle]: [label1, label2, ...] }
+    const [selections, setSelections] = useState<{ [key: string]: string[] }>({});
     const [note, setNote] = useState("");
     const [qty, setQty] = useState(1);
 
-    const SPICY_OPTS = ["ไม่เผ็ด", "น้อย", "กลาง", "แซ่บมาก"];
-    const ADDON_OPTS = [
-        { label: "ไข่ดาว", price: 10 },
-        { label: "ข้าวเพิ่ม", price: 15 },
-    ];
+    // Initialize selections with empty arrays for all groups
+    useEffect(() => {
+        const initial: { [key: string]: string[] } = {};
+        item.addons?.forEach(group => {
+            initial[group.title] = [];
+        });
+        setSelections(initial);
+    }, [item]);
 
-    const totalAddonPrice = addons.reduce((s, a) => s + (ADDON_OPTS.find(o => o.label === a)?.price ?? 0), 0);
+    const toggleOption = (group: OptionGroup, option: Option) => {
+        setSelections(prev => {
+            const current = prev[group.title] || [];
+            if (group.allowMultiple) {
+                if (current.includes(option.label)) {
+                    return { ...prev, [group.title]: current.filter(l => l !== option.label) };
+                } else {
+                    return { ...prev, [group.title]: [...current, option.label] };
+                }
+            } else {
+                // Single choice: if same label, deselect (unless required logic says otherwise, but usually just toggle)
+                if (current.includes(option.label)) {
+                    return { ...prev, [group.title]: [] };
+                } else {
+                    return { ...prev, [group.title]: [option.label] };
+                }
+            }
+        });
+    };
+
+    const calculateTotalAddonPrice = () => {
+        let total = 0;
+        item.addons?.forEach(group => {
+            const selectedLabels = selections[group.title] || [];
+            selectedLabels.forEach(label => {
+                const opt = group.options.find(o => o.label === label);
+                if (opt) total += opt.price;
+            });
+        });
+        return total;
+    };
+
+    const totalAddonPrice = calculateTotalAddonPrice();
     const totalPrice = (item.price + totalAddonPrice) * qty;
 
-    const toggleAddon = (label: string) =>
-        setAddons(prev => prev.includes(label) ? prev.filter(a => a !== label) : [...prev, label]);
+    const isReady = () => {
+        // Check if all required groups have at least one selection
+        return item.addons?.every(group => {
+            if (!group.required) return true;
+            return (selections[group.title]?.length || 0) > 0;
+        }) ?? true;
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
@@ -107,77 +162,82 @@ function AddonsModal({
                 </div>
 
                 {/* Scrollable body */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                <div className="flex-1 overflow-y-auto p-5 space-y-6">
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">{item.name}</h2>
                         {item.description && <p className="text-sm text-gray-500 mt-1 leading-relaxed">{item.description}</p>}
                         <p className="text-xl font-bold text-orange-500 mt-2">฿{item.price}</p>
                     </div>
 
-                    {/* Spicy level */}
-                    <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">ระดับความเผ็ด <span className="text-red-400 ml-1">*เลือก 1</span></p>
-                        <div className="grid grid-cols-2 gap-2">
-                            {SPICY_OPTS.map(opt => (
-                                <button
-                                    key={opt}
-                                    onClick={() => setSpicy(opt)}
-                                    className={`py-2.5 px-3 rounded-xl text-sm font-medium border-2 transition-all ${spicy === opt ? "border-orange-500 bg-orange-50 text-orange-600" : "border-gray-200 text-gray-600 hover:border-gray-300"}`}
-                                >
-                                    {opt}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Add-ons */}
-                    <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">เพิ่มเติม (ไม่บังคับ)</p>
-                        <div className="space-y-2">
-                            {ADDON_OPTS.map(opt => (
-                                <label key={opt.label} className={`flex items-center justify-between p-3 rounded-xl border-2 cursor-pointer transition-all ${addons.includes(opt.label) ? "border-orange-500 bg-orange-50" : "border-gray-100 hover:border-gray-200"}`}>
-                                    <div className="flex items-center gap-3">
-                                        <div className={`h-5 w-5 rounded-md border-2 flex items-center justify-center transition-colors ${addons.includes(opt.label) ? "border-orange-500 bg-orange-500" : "border-gray-300"}`}>
-                                            {addons.includes(opt.label) && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-800">{opt.label}</span>
-                                    </div>
-                                    <span className="text-sm font-semibold text-orange-500">+฿{opt.price}</span>
-                                    <input type="checkbox" className="sr-only" checked={addons.includes(opt.label)} onChange={() => toggleAddon(opt.label)} />
-                                </label>
-                            ))}
-                        </div>
-                    </div>
+                    {/* Dynamic Option Groups */}
+                    {item.addons && item.addons.length > 0 ? (
+                        item.addons.map((group) => (
+                            <div key={group.id} className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-sm font-bold text-gray-800">
+                                        {group.title}
+                                        {group.required && <span className="text-red-500 ml-1 italic text-[10px] font-black uppercase">REQUIRED *</span>}
+                                    </p>
+                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                        {group.allowMultiple ? "เลือกได้หลายอย่าง" : "เลือกได้ 1 อย่าง"}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {group.options.map((opt) => {
+                                        const isSelected = selections[group.title]?.includes(opt.label);
+                                        return (
+                                            <button
+                                                key={opt.label}
+                                                onClick={() => toggleOption(group, opt)}
+                                                className={`flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all ${isSelected ? "border-orange-500 bg-orange-50 text-orange-600" : "border-gray-100 text-gray-600 hover:border-gray-300"}`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? "border-orange-500 bg-orange-500" : "border-gray-300"}`}>
+                                                        {isSelected && <Check className="h-3 w-3 text-white" strokeWidth={4} />}
+                                                    </div>
+                                                    <span className="text-sm font-bold">{opt.label}</span>
+                                                </div>
+                                                {opt.price > 0 && <span className={`text-xs font-black ${isSelected ? "text-orange-600" : "text-gray-400"}`}>+฿{opt.price}</span>}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-xs text-gray-400 italic py-4 text-center">ไม่มีตัวเลือกเพิ่มเติมสำหรับเมนูนี้</p>
+                    )}
 
                     {/* Note */}
-                    <div>
-                        <p className="text-sm font-semibold text-gray-700 mb-2">บอกแม่ค้า (ถ้ามี)</p>
+                    <div className="pt-2">
+                        <p className="text-sm font-bold text-gray-800 mb-2 italic text-gray-400 uppercase tracking-widest">โน้ตถึงร้านค้า (ถ้ามี)</p>
                         <textarea
                             value={note}
                             onChange={e => setNote(e.target.value)}
-                            placeholder="เช่น ไม่ใส่ผักชี, ขอถุงแยก..."
-                            className="w-full border border-gray-200 rounded-xl p-3 text-sm resize-none h-20 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+                            placeholder="เช่น ไม่ใส่ผักชี, ขอช้อนส้อม..."
+                            className="w-full border border-gray-100 bg-gray-50/50 rounded-2xl p-4 text-sm resize-none h-24 focus:outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-50 transition-all font-medium"
                         />
                     </div>
                 </div>
 
                 {/* Bottom action */}
-                <div className="p-4 pb-6 border-t border-gray-100 shrink-0 bg-white">
-                    <div className="flex items-center gap-3">
-                        <div className="flex items-center bg-gray-100 rounded-xl">
-                            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="h-11 w-11 flex items-center justify-center text-gray-600 hover:text-gray-900 transition-colors">
+                <div className="p-5 pb-8 border-t border-gray-100 shrink-0 bg-white">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center bg-gray-100 p-1 rounded-2xl">
+                            <button onClick={() => setQty(q => Math.max(1, q - 1))} className="h-10 w-10 flex items-center justify-center text-gray-400 hover:text-gray-900 transition-colors">
                                 <Minus className="h-4 w-4" />
                             </button>
-                            <span className="w-8 text-center font-bold text-gray-900">{qty}</span>
-                            <button onClick={() => setQty(q => q + 1)} className="h-11 w-11 flex items-center justify-center text-orange-500 hover:text-orange-600 transition-colors">
+                            <span className="w-8 text-center font-black text-gray-900 text-base">{qty}</span>
+                            <button onClick={() => setQty(q => q + 1)} className="h-10 w-10 flex items-center justify-center text-orange-500 hover:text-orange-600 transition-colors">
                                 <Plus className="h-4 w-4" />
                             </button>
                         </div>
                         <button
-                            onClick={() => onAdd(item, { spicy, addons, note }, qty)}
-                            className="flex-1 bg-orange-500 hover:bg-orange-600 active:scale-[0.98] transition-all text-white h-12 rounded-xl font-bold flex items-center justify-between px-5 shadow-md shadow-orange-200"
+                            disabled={!isReady()}
+                            onClick={() => onAdd(item, selections, note, qty)}
+                            className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-200 disabled:text-gray-400 active:scale-[0.98] transition-all text-white h-12 rounded-2xl font-black flex items-center justify-between px-6 shadow-xl shadow-orange-100 disabled:shadow-none"
                         >
-                            <span>ใส่ตะกร้า</span>
+                            <span>เพิ่มลงตะกร้า</span>
                             <span>฿{totalPrice.toLocaleString()}</span>
                         </button>
                     </div>
@@ -275,12 +335,23 @@ export default function MenuPage({ params, searchParams }: {
         fetchData();
     }, [shop_slug]);
 
-    const addToCart = (item: MenuItem, options: GlobalCartItem["options"], qty: number) => {
-        const addonPrice = options.addons.reduce((s, a) => {
-            const found = [{ label: "ไข่ดาว", price: 10 }, { label: "ข้าวเพิ่ม", price: 15 }].find(o => o.label === a);
-            return s + (found?.price ?? 0);
-        }, 0);
-        const key = `${item.id}-${options.spicy}-${options.addons.join(",")}`;
+    const addToCart = (item: MenuItem, selections: CartItem["options"], note: string, qty: number) => {
+        let addonPrice = 0;
+        item.addons?.forEach(group => {
+            const selectedLabels = selections[group.title] || [];
+            selectedLabels.forEach(label => {
+                const opt = group.options.find(o => o.label === label);
+                if (opt) addonPrice += opt.price;
+            });
+        });
+
+        // Unique key for same product with different options
+        const optionsHash = Object.entries(selections)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([k, v]) => `${k}:${v.join(",")}`)
+            .join("|");
+
+        const key = `${item.id}-${optionsHash}-${note}`;
 
         addToCartCtx({
             id: key,
@@ -288,7 +359,8 @@ export default function MenuPage({ params, searchParams }: {
             name: item.name,
             price: item.price + addonPrice,
             qty,
-            options,
+            // @ts-ignore - Adjust GlobalCartItem type if needed in CartContext
+            options: { ...selections, note },
             imageUrl: item.imageUrl || undefined
         });
         setSelectedItem(null);
