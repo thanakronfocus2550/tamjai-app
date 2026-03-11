@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Store, User, Mail, Phone, Globe, CheckCircle2, ChevronRight, Lock, AlertCircle, XCircle } from "lucide-react";
+import LegalConsentCheckbox from "@/components/LegalConsentCheckbox";
 
 export default function RegisterPage() {
     const [step, setStep] = useState(1);
@@ -15,10 +16,12 @@ export default function RegisterPage() {
         phone: "",
         password: "",
         subdomain: "",
-        plan: "free",
+        plan: "free" as "free" | "pro" | "pos",
         couponCode: "",
+        extra_info: "", // Honeypot field
     });
 
+    const [acceptedLegal, setAcceptedLegal] = useState(false);
     const [receivedRefCode, setReceivedRefCode] = useState("");
 
     // Platform settings (usually fetched from an API)
@@ -40,6 +43,7 @@ export default function RegisterPage() {
     const [slipFileName, setSlipFileName] = useState("");
     const [slipBase64, setSlipBase64] = useState("");
     const [paymentConfig, setPaymentConfig] = useState({ bankName: "", accountNo: "", accountName: "" });
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
     // Fetch config on mount
     React.useEffect(() => {
@@ -75,7 +79,41 @@ export default function RegisterPage() {
         setFormData((prev) => ({ ...prev, [field]: value }));
     };
 
+    const validateStep1 = () => {
+        const errors: Record<string, string> = {};
+
+        if (!formData.storeName) {
+            errors.storeName = "กรุณากรอกชื่อร้าน";
+        } else if (formData.storeName.length < 3) {
+            errors.storeName = "ชื่อร้านต้องมีความยาวอย่างน้อย 3 ตัวอักษร";
+        } else if (formData.storeName.length > 50) {
+            errors.storeName = "ชื่อร้านต้องมีความยาวไม่เกิน 50 ตัวอักษร";
+        }
+        if (!formData.fullName) errors.fullName = "กรุณากรอกชื่อ-นามสกุล";
+
+        // Phone: Numeric only, 9-10 digits
+        if (!/^[0-9]{9,10}$/.test(formData.phone)) {
+            errors.phone = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 9-10 หลัก";
+        }
+
+        // Email: Gmail or Hotmail only
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@(gmail\.com|hotmail\.com)$/i;
+        if (!emailRegex.test(formData.email)) {
+            errors.email = "รองรับเฉพาะ Gmail หรือ Hotmail เท่านั้น";
+        }
+
+        // Password: 8+ English chars only
+        const passwordRegex = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/;
+        if (!passwordRegex.test(formData.password)) {
+            errors.password = "รหัสผ่านต้องเป็นภาษาอังกฤษ 8 ตัวขึ้นไป";
+        }
+
+        setFieldErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
     const nextStep = () => {
+        if (step === 1 && !validateStep1()) return;
         if (step < 4) setStep(step + 1);
     };
 
@@ -92,10 +130,12 @@ export default function RegisterPage() {
                     shopName: formData.storeName,
                     shopSlug: formData.subdomain,
                     email: formData.email,
+                    phone: formData.phone,
                     password: formData.password,
                     couponCode: formData.couponCode,
                     plan: formData.plan,
                     slipBase64: formData.plan === 'pro' ? slipBase64 : undefined,
+                    extra_info: formData.extra_info, // Honeypot data
                 }),
             });
 
@@ -173,6 +213,18 @@ export default function RegisterPage() {
                                     className="space-y-5"
                                 >
                                     <div className="space-y-4">
+                                        {/* Honeypot field (hidden from users) */}
+                                        <div className="hidden" aria-hidden="true">
+                                            <input
+                                                type="text"
+                                                name="extra_info"
+                                                value={formData.extra_info}
+                                                onChange={(e) => updateForm("extra_info", e.target.value)}
+                                                tabIndex={-1}
+                                                autoComplete="off"
+                                            />
+                                        </div>
+
                                         {/* Store Name & Owner Details */}
                                         <div>
                                             <label className="block text-sm font-bold text-gray-700 mb-1.5">ชื่อร้าน (Store Name) <span className="text-brand-orange">*</span></label>
@@ -183,9 +235,10 @@ export default function RegisterPage() {
                                                     placeholder="เช่น ส้มตำแซ่บเวอร์ สาขาเอกมัย"
                                                     value={formData.storeName}
                                                     onChange={(e) => updateForm("storeName", e.target.value)}
-                                                    className="w-full rounded-2xl border border-gray-200 bg-white/50 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none"
+                                                    className={`w-full rounded-2xl border ${fieldErrors.storeName ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-white/50'} py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none`}
                                                 />
                                             </div>
+                                            {fieldErrors.storeName && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{fieldErrors.storeName}</p>}
                                         </div>
 
                                         <div className="grid grid-cols-3 gap-4">
@@ -221,12 +274,16 @@ export default function RegisterPage() {
                                                     <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                                     <input
                                                         type="tel"
-                                                        placeholder="08X-XXX-XXXX"
+                                                        placeholder="08XXXXXXXX"
                                                         value={formData.phone}
-                                                        onChange={(e) => updateForm("phone", e.target.value)}
-                                                        className="w-full rounded-2xl border border-gray-200 bg-white/50 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none"
+                                                        onChange={(e) => {
+                                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                                            updateForm("phone", val);
+                                                        }}
+                                                        className={`w-full rounded-2xl border ${fieldErrors.phone ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-white/50'} py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none`}
                                                     />
                                                 </div>
+                                                {fieldErrors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{fieldErrors.phone}</p>}
                                             </div>
                                         </div>
 
@@ -239,12 +296,13 @@ export default function RegisterPage() {
                                                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                                 <input
                                                     type="email"
-                                                    placeholder="you@example.com"
+                                                    placeholder="you@gmail.com หรือ hotmail.com"
                                                     value={formData.email}
                                                     onChange={(e) => updateForm("email", e.target.value)}
-                                                    className="w-full rounded-2xl border border-gray-200 bg-white/50 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none"
+                                                    className={`w-full rounded-2xl border ${fieldErrors.email ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-white/50'} py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none`}
                                                 />
                                             </div>
+                                            {fieldErrors.email && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{fieldErrors.email}</p>}
                                         </div>
 
                                         <div>
@@ -253,12 +311,13 @@ export default function RegisterPage() {
                                                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                                 <input
                                                     type="password"
-                                                    placeholder="••••••••"
+                                                    placeholder="ภาษาอังกฤษ 8 ตัวขึ้นไป"
                                                     value={formData.password}
                                                     onChange={(e) => updateForm("password", e.target.value)}
-                                                    className="w-full rounded-2xl border border-gray-200 bg-white/50 py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none"
+                                                    className={`w-full rounded-2xl border ${fieldErrors.password ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-white/50'} py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none`}
                                                 />
                                             </div>
+                                            {fieldErrors.password && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{fieldErrors.password}</p>}
                                         </div>
                                     </div>
 
@@ -387,7 +446,7 @@ export default function RegisterPage() {
                                                     <p className="text-xs font-medium text-gray-500 mt-1">
                                                         {!canRegisterFree
                                                             ? (isQuotaFull ? "โควตาสมัครฟรีเต็มแล้ว (จำกัด 10 ร้านค้า)" : "ระบบปิดรับสมัครทดลองใช้ฟรีกดชั่วคราว")
-                                                            : "ใช้งานฟีเจอร์ Pro ได้เต็มรูปแบบ (ไม่ต้องแนบสลิป)"}
+                                                            : "ทดลองใช้งานฟีเจอร์ Pro (ระบบสั่งอาหารผ่าน QR) ได้ครบทุกอย่าง นาน 7 วัน *ยกเว้นระบบจัดการโต๊ะและ POS หน้าร้าน*"}
                                                     </p>
                                                 </div>
                                                 <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${formData.plan === 'free' ? 'border-brand-orange bg-brand-orange' : 'border-gray-300'}`}>
@@ -470,6 +529,63 @@ export default function RegisterPage() {
                                             )}
                                         </label>
 
+                                        <label className={`block relative p-4 rounded-2xl border-2 transition-all cursor-pointer ${formData.plan === 'pos' ? 'border-brand-orange bg-orange-50/50' : 'border-gray-200 bg-white hover:border-brand-orange/30'}`}>
+                                            <input type="radio" name="plan" value="pos" checked={formData.plan === 'pos'} onChange={() => updateForm('plan', 'pos')} className="absolute opacity-0" />
+                                            <div className="flex items-start justify-between">
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-black text-gray-900">Tamjai POS (600฿/เดือน)</p>
+                                                        <span className="bg-brand-orange text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">New</span>
+                                                    </div>
+                                                    <p className="text-xs font-medium text-gray-500 mt-1">ฟีเจอร์ครบ สำหรับร้านที่มีหน้าร้าน-กินที่โต๊ะ (Dine-in)</p>
+                                                </div>
+                                                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${formData.plan === 'pos' ? 'border-brand-orange bg-brand-orange' : 'border-gray-200 bg-white'}`}>
+                                                    {formData.plan === 'pos' && <div className="h-2 w-2 rounded-full bg-white"></div>}
+                                                </div>
+                                            </div>
+
+                                            {/* POS Slip Upload */}
+                                            {formData.plan === 'pos' && (
+                                                <div className="mt-4 pt-4 border-t border-brand-orange/20 space-y-4">
+                                                    <div className="bg-white rounded-xl p-4 border border-orange-100 shadow-sm">
+                                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">ช่องทางชำระเงิน</p>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="h-10 w-10 rounded-lg bg-green-600 flex items-center justify-center shrink-0 text-white font-bold text-xs p-1 text-center leading-tight">ชำระเงิน</div>
+                                                            <div>
+                                                                <p className="text-sm font-bold text-gray-900">{paymentConfig.bankName || "กำลังโหลด..."}</p>
+                                                                <p className="text-xs font-medium text-gray-500">{paymentConfig.accountNo} ({paymentConfig.accountName})</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="mt-3 p-2 bg-orange-50 rounded-lg text-center">
+                                                            <p className="text-[10px] font-bold text-brand-orange uppercase">
+                                                                ยอดโอน: 600.00 บาท
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="relative border border-dashed border-brand-orange/50 bg-white rounded-xl p-4 text-center cursor-pointer hover:bg-orange-50/30 transition-colors">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/jpeg, image/png"
+                                                            onChange={handleFileUpload}
+                                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                        />
+                                                        {slipFileName ? (
+                                                            <div className="flex flex-col items-center gap-1">
+                                                                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                                                                <p className="text-xs font-bold text-gray-900">{slipFileName}</p>
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <p className="text-xs font-bold text-brand-orange mb-1">+ แตะเพื่ออัปโหลดสลิปชำระเงิน</p>
+                                                                <p className="text-[10px] text-gray-400">รองรับ JPG, PNG เท่านั้น</p>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </label>
+
                                         {/* Coupon Code Field */}
                                         <div className="pt-2">
                                             <label className="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5 pl-1">โค้ดส่วนลด (Coupon Code)</label>
@@ -485,9 +601,10 @@ export default function RegisterPage() {
                                         </div>
                                     </div>
 
-                                    <p className="text-[11px] font-bold text-gray-400 text-center px-4">
-                                        การคลิกปุ่ม "ยืนยันการเปิดร้าน" หมายความว่าคุณยอมรับ <Link href="#" className="underline hover:text-gray-700">เงื่อนไขการให้บริการ</Link> และ <Link href="#" className="underline hover:text-gray-700">นโยบายความเป็นส่วนตัว</Link> ของเรา
-                                    </p>
+                                    <LegalConsentCheckbox
+                                        checked={acceptedLegal}
+                                        onChange={setAcceptedLegal}
+                                    />
 
                                     {submitError && (
                                         <p className="text-sm font-bold text-red-500 bg-red-50 border border-red-100 rounded-xl px-4 py-2 mt-4 text-center">
@@ -505,7 +622,7 @@ export default function RegisterPage() {
                                         </button>
                                         <button
                                             onClick={submitForm}
-                                            disabled={isSubmitting}
+                                            disabled={isSubmitting || !acceptedLegal}
                                             className="w-2/3 rounded-2xl bg-brand-orange px-6 py-4 text-sm font-black text-white shadow-[0_10px_30px_rgba(255,107,0,0.3)] hover:shadow-[0_20px_40px_rgba(255,107,0,0.4)] transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2 group disabled:opacity-60 disabled:hover:translate-y-0"
                                         >
                                             {isSubmitting ? "กำลังดำเนินการ..." : <>ยืนยันการเปิดร้าน <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" /></>}
@@ -577,13 +694,13 @@ export default function RegisterPage() {
                             )}
                         </AnimatePresence>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Right Column: Visuals (Hidden on small screens) */}
-            <div className="hidden lg:flex flex-1 bg-gray-900 relative items-center justify-center p-12 overflow-hidden">
+            < div className="hidden lg:flex flex-1 bg-gray-900 relative items-center justify-center p-12 overflow-hidden" >
                 {/* Abstract background elements */}
-                <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-orange/20 rounded-full blur-[120px] mix-blend-screen translate-x-1/3 -translate-y-1/3"></div>
+                < div className="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-orange/20 rounded-full blur-[120px] mix-blend-screen translate-x-1/3 -translate-y-1/3" ></div >
                 <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[100px] mix-blend-screen -translate-x-1/3 translate-y-1/3"></div>
 
                 <div className="relative z-10 max-w-lg">
@@ -636,7 +753,7 @@ export default function RegisterPage() {
                         </div>
                     </div>
                 </motion.div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

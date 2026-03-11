@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const [tenantCount, proTenantCount, totalRevenue, userCount, promoStats, pendingTickets, pendingApprovals] = await Promise.all([
+        const [tenantCount, proTenantCount, totalRevenue, userCount, promoStats, pendingTickets, pendingApprovalsCount, pendingRegistrations] = await Promise.all([
             prisma.tenant.count(),
             prisma.tenant.count({ where: { plan: "PRO" } }),
             prisma.order.aggregate({
@@ -29,10 +29,19 @@ export async function GET(request: NextRequest) {
                 take: 3,
                 orderBy: { createdAt: "desc" }
             }) : [],
-            // @ts-ignore
-            prisma.paymentApproval ? prisma.paymentApproval.count({
+            prisma.paymentApproval.count({
                 where: { status: "PENDING" }
-            }) : 0
+            }) as any,
+            prisma.paymentApproval.findMany({
+                where: { status: "PENDING" },
+                take: 5,
+                orderBy: { createdAt: "desc" },
+                include: {
+                    tenant: {
+                        select: { name: true }
+                    }
+                }
+            }) as any
         ]);
 
         // Get recent tenants
@@ -73,7 +82,15 @@ export async function GET(request: NextRequest) {
             promoCodes: promoStats._count.id || 0,
             promoUsage: promoStats._sum.usageCount || 0,
             notifications: {
-                paymentApprovals: pendingApprovals,
+                paymentApprovals: pendingApprovalsCount,
+                pendingRegistrations: pendingRegistrations.map((r: any) => ({
+                    id: r.id,
+                    tenantName: r.tenant.name,
+                    plan: r.plan,
+                    amount: r.amount,
+                    refId: r.refId,
+                    createdAt: r.createdAt
+                })),
                 urgentSupport: pendingTickets.map((t: any) => ({
                     id: t.id,
                     name: t.shopSlug === 'general' ? 'General' : t.shopSlug,

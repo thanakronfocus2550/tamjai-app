@@ -6,12 +6,28 @@
  * Also requests browser notification permission on mount.
  */
 
-export function playOrderSound() {
+let sharedCtx: AudioContext | null = null;
+
+export async function playOrderSound() {
     if (typeof window === "undefined") return;
 
     try {
-        const ctx = new AudioContext();
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) {
+            console.warn("AudioContext not supported in this browser");
+            return;
+        }
 
+        if (!sharedCtx || sharedCtx.state === 'closed') {
+            sharedCtx = new AudioContextClass();
+        }
+        const ctx = sharedCtx;
+
+        if (ctx.state === "suspended") {
+            await ctx.resume();
+        }
+
+        // Use more standard frequencies (C5, E5, G5)
         const playTone = (freq: number, startTime: number, duration: number, gain: number) => {
             const osc = ctx.createOscillator();
             const gainNode = ctx.createGain();
@@ -30,13 +46,14 @@ export function playOrderSound() {
             osc.stop(startTime + duration);
         };
 
-        // Play a pleasant 3-note "ding ding ding" chord sequence
         const now = ctx.currentTime;
-        playTone(1047, now, 0.5, 0.4);       // C6
-        playTone(1319, now + 0.15, 0.5, 0.3); // E6
-        playTone(1568, now + 0.3, 0.7, 0.3);  // G6
+        playTone(523.25, now, 0.5, 0.4);       // C5
+        playTone(659.25, now + 0.12, 0.5, 0.3); // E5
+        playTone(783.99, now + 0.24, 0.7, 0.3); // G5
+
+        console.log("Order sound played successfully. State:", ctx.state);
     } catch (err) {
-        console.warn("Audio playback failed:", err);
+        console.error("Audio playback failed definitively:", err);
     }
 }
 

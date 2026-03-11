@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,6 +27,25 @@ function ContactForm() {
         shopName: shopParam || "", // Auto-fills if linking from a specific shop
         message: "",
     });
+    const [platformConfig, setPlatformConfig] = useState({
+        supportEmail: "support@tamjai.pro",
+        supportPhone: "02-XXX-XXXX",
+    });
+
+    useEffect(() => {
+        fetch("/api/config/platform")
+            .then(res => res.json())
+            .then(data => {
+                if (data) {
+                    setPlatformConfig({
+                        supportEmail: data.supportEmail,
+                        supportPhone: data.supportPhone,
+                    });
+                }
+            })
+            .catch(err => console.error("Failed to fetch platform config:", err));
+    }, []);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
@@ -102,7 +121,7 @@ function ContactForm() {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">เบอร์โทรศัพท์</h3>
-                                    <a href="tel:+662xxxxxxx" className="text-xl font-black text-gray-900 hover:text-brand-orange transition-colors">02-XXX-XXXX</a>
+                                    <a href={`tel:${platformConfig.supportPhone}`} className="text-xl font-black text-gray-900 hover:text-brand-orange transition-colors">{platformConfig.supportPhone}</a>
                                     <p className="text-sm font-medium text-gray-500 mt-0.5">จันทร์ - ศุกร์ (09:00 - 18:00)</p>
                                 </div>
                             </div>
@@ -113,7 +132,7 @@ function ContactForm() {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-1">อีเมล</h3>
-                                    <a href="mailto:support@tamjai.pro" className="text-xl font-black text-gray-900 hover:text-brand-orange transition-colors">support@tamjai.pro</a>
+                                    <a href={`mailto:${platformConfig.supportEmail}`} className="text-xl font-black text-gray-900 hover:text-brand-orange transition-colors">{platformConfig.supportEmail}</a>
                                     <p className="text-sm font-medium text-gray-500 mt-0.5">ตอบกลับภายใน 24 ชั่วโมง</p>
                                 </div>
                             </div>

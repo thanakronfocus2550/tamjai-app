@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import {
     Settings,
@@ -12,7 +12,8 @@ import {
     Globe2,
     Megaphone,
     AlertCircle,
-    Gift
+    Gift,
+    Loader2
 } from "lucide-react";
 
 const containerVariants: Variants = {
@@ -26,6 +27,15 @@ const itemVariants: Variants = {
 };
 
 export default function SettingsPage() {
+    const [platformConfig, setPlatformConfig] = useState({
+        platformName: "Tamjai Pro",
+        supportEmail: "support@tamjai.pro",
+        supportPhone: "02-XXX-XXXX",
+    });
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+
+    // Other UI states (Mocks for now)
     const [announcement, setAnnouncement] = useState("ประกาศ: ระบบจะมีการปิดปรับปรุงชั่วคราวในวันที่ 15 ต.ค. นี้ เวลา 02:00 - 04:00 น.");
     const [isAnnounceActive, setIsAnnounceActive] = useState(true);
     const [features, setFeatures] = useState([
@@ -41,8 +51,47 @@ export default function SettingsPage() {
         buttonLink: "/register",
     });
 
-    const handleSave = () => {
-        alert("บันทึกการตั้งค่าแพลตฟอร์มสำเร็จ! การเปลี่ยนแปลงจะมีผลกับทุกร้านค้าในระบบทันที");
+    useEffect(() => {
+        fetchPlatformConfig();
+    }, []);
+
+    const fetchPlatformConfig = async () => {
+        try {
+            const res = await fetch("/api/admin/config/platform");
+            if (res.ok) {
+                const data = await res.json();
+                setPlatformConfig({
+                    platformName: data.platformName,
+                    supportEmail: data.supportEmail,
+                    supportPhone: data.supportPhone,
+                });
+            }
+        } catch (error) {
+            console.error("Failed to fetch platform config", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        try {
+            const res = await fetch("/api/admin/config/platform", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(platformConfig),
+            });
+            if (res.ok) {
+                alert("บันทึกการตั้งค่าแพลตฟอร์มสำเร็จ! การเปลี่ยนแปลงจะมีผลกับทุกร้านค้าในระบบทันที");
+            } else {
+                alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+            }
+        } catch (error) {
+            console.error("Failed to save platform config", error);
+            alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const toggleFeature = (id: number) => {
@@ -69,9 +118,10 @@ export default function SettingsPage() {
                 <motion.div variants={itemVariants} className="flex gap-3">
                     <button
                         onClick={handleSave}
-                        className="flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-gray-800 transition-all hover:-translate-y-0.5"
+                        disabled={isSaving || isLoading}
+                        className="flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-gray-800 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0"
                     >
-                        <Save className="h-4 w-4" /> บันทึกการตั้งค่า
+                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} บันทึกการตั้งค่า
                     </button>
                 </motion.div>
             </div>
@@ -183,15 +233,30 @@ export default function SettingsPage() {
                         <div className="grid sm:grid-cols-2 gap-6">
                             <div className="sm:col-span-2">
                                 <label className="block text-xs font-black uppercase text-gray-400 mb-2">ชื่อแพลตฟอร์ม</label>
-                                <input type="text" defaultValue="Tamjai Pro" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white" />
+                                <input
+                                    type="text"
+                                    value={platformConfig.platformName}
+                                    onChange={(e) => setPlatformConfig({ ...platformConfig, platformName: e.target.value })}
+                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white"
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-black uppercase text-gray-400 mb-2">อีเมลติดต่อกลับ (Support)</label>
-                                <input type="email" defaultValue="support@tamjai.pro" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white" />
+                                <input
+                                    type="email"
+                                    value={platformConfig.supportEmail}
+                                    onChange={(e) => setPlatformConfig({ ...platformConfig, supportEmail: e.target.value })}
+                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white"
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-black uppercase text-gray-400 mb-2">เบอร์โทรศัพท์ติดต่อระบบ</label>
-                                <input type="tel" defaultValue="02-XXX-XXXX" className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white" />
+                                <input
+                                    type="tel"
+                                    value={platformConfig.supportPhone}
+                                    onChange={(e) => setPlatformConfig({ ...platformConfig, supportPhone: e.target.value })}
+                                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-orange focus:bg-white"
+                                />
                             </div>
                         </div>
                     </div>

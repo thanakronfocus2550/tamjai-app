@@ -2,7 +2,7 @@
 
 import React, { useState, use, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Clock, CheckCircle2, ShoppingBag, MapPin, Bike, Store, Loader2, ChevronLeft, Flame, Bell, Volume2 } from "lucide-react";
+import { Clock, CheckCircle2, ShoppingBag, Bike, Loader2, ChevronRight, Bell, Volume2, VolumeX } from "lucide-react";
 import { playOrderSound, requestNotificationPermission, showBrowserNotification } from "@/hooks/useOrderSound";
 
 type OrderStatus = "new" | "prepping" | "ready" | "completed" | "cancelled";
@@ -13,6 +13,7 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
     const [isLoading, setIsLoading] = useState(true);
     const [notifEnabled, setNotifEnabled] = useState(false);
     const [alertsActive, setAlertsActive] = useState(true);
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
     const prevNewCount = useRef(0);
 
     const fetchOrders = async () => {
@@ -23,10 +24,11 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                 // We only care about active kitchen orders (new, prepping, ready)
                 const activeOrders = data.filter((o: any) => ["new", "prepping", "ready"].includes(o.status));
 
+                // Sound and Notification logic
                 const newOrders = data.filter((o: any) => o.status === "new");
                 if (newOrders.length > prevNewCount.current && !isLoading && alertsActive) {
                     playOrderSound();
-                    showBrowserNotification(`👨‍🍳 ออเดอร์ใหม่!`, `มีรายการใหม่รอให้เชฟจัดการครับ`);
+                    showBrowserNotification(`🔔 ออเดอร์ใหม่!`, `มีออเดอร์ใหม่ ${newOrders.length} รายการ`);
                 }
                 prevNewCount.current = newOrders.length;
                 setOrders(activeOrders);
@@ -45,18 +47,27 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
         fetchOrders();
         const interval = setInterval(fetchOrders, 10000);
         return () => clearInterval(interval);
-    }, [shop_slug]);
+    }, [shop_slug, isLoading, alertsActive]);
 
     const updateStatus = async (orderId: string, nextStatus: OrderStatus) => {
+        setUpdatingId(orderId);
+
+        // Optimistic update
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: nextStatus } : o)
+            .filter(o => ["new", "prepping", "ready"].includes(o.status)));
+
         try {
             const res = await fetch(`/api/orders/${orderId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ status: nextStatus }),
             });
-            if (res.ok) fetchOrders();
+            if (res.ok) await fetchOrders();
         } catch (err) {
             console.error("Status update error:", err);
+            fetchOrders();
+        } finally {
+            setUpdatingId(null);
         }
     };
 
@@ -66,7 +77,7 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
             <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-4">
                     <Link href={`/menu/${shop_slug}/admin`} className="h-12 w-12 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all">
-                        <ChevronLeft className="h-6 w-6" />
+                        <ChevronRight className="h-6 w-6 rotate-180" />
                     </Link>
                     <div>
                         <h1 className="text-3xl font-black tracking-tighter flex items-center gap-3">
@@ -77,7 +88,15 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                         </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => playOrderSound()}
+                        className="h-11 w-11 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all active:scale-90 shadow-lg shadow-orange-500/10"
+                        title="Test Sound"
+                    >
+                        <Volume2 className="h-5 w-5" />
+                    </button>
+
                     <button
                         onClick={() => {
                             if (!notifEnabled) {
@@ -85,15 +104,22 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                                     setNotifEnabled(Notification.permission === "granted");
                                 });
                             }
+                            if (!alertsActive) {
+                                playOrderSound();
+                            }
                             setAlertsActive(!alertsActive);
                         }}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-xs transition-all active:scale-95 ${alertsActive && notifEnabled ? "bg-emerald-500 text-white" : "bg-red-500/10 text-red-400 border border-red-500/20"}`}
+                        className={`group relative flex items-center gap-3 px-6 py-3 rounded-full font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-xl ${alertsActive ? "bg-white text-orange-600 shadow-orange-500/20" : "bg-black/40 text-white/40 border border-white/10 shadow-none"}`}
                     >
-                        <Bell className={`h-4 w-4 ${alertsActive && notifEnabled ? "animate-bounce" : ""}`} />
-                        {alertsActive && notifEnabled ? "ALERTS ON" : "ALERTS OFF"}
+                        {alertsActive ? <Bell className="h-5 w-5 animate-pulse" /> : <VolumeX className="h-5 w-5" />}
+                        <span>{alertsActive ? "ALERTS ACTIVE" : "ALERTS MUTED"}</span>
+                        {alertsActive && !notifEnabled && <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 rounded-full border-4 border-[#0F0F0F] animate-pulse" />}
+                        {alertsActive && notifEnabled && <span className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 rounded-full border-4 border-[#0F0F0F] animate-pulse" />}
                     </button>
-                    <div className="bg-white/10 px-4 py-2 rounded-2xl font-black text-xs text-orange-400">
-                        {orders.length} ACTIVE
+
+                    <div className="flex flex-col items-end">
+                        <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Kitchen Monitor</span>
+                        <span className="text-sm font-black text-white uppercase tracking-tighter">{shop_slug}</span>
                     </div>
                 </div>
             </div>
@@ -169,39 +195,40 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
 
                                 {/* Info Footer */}
                                 <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-gray-400">
-                                        {/* @ts-ignore */}
-                                        {order.orderType === "delivery" ? <Bike className="h-4 w-4" /> : <Store className="h-4 w-4" />}
-                                        {/* @ts-ignore */}
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{order.orderType || "pickup"}</span>
+                                    <div className="flex items-center gap-2 text-orange-500">
+                                        <Bike className="h-4 w-4" />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">Delivery ONLY</span>
                                     </div>
-                                    <p className="text-[11px] font-bold text-gray-500">{(order.customer as any).name}</p>
+                                    <p className="text-[11px] font-bold text-gray-400">{(order.customer as any).name}</p>
                                 </div>
 
                                 {/* Actions */}
                                 <div className="p-3">
                                     {isNew && (
                                         <button
+                                            disabled={updatingId === order.id}
                                             onClick={() => updateStatus(order.id, "prepping")}
-                                            className="w-full bg-orange-500 hover:bg-orange-600 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-orange-500/20"
+                                            className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2"
                                         >
-                                            ACCEPT & COOK
+                                            {updatingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "ACCEPT & COOK"}
                                         </button>
                                     )}
                                     {isPrepping && (
                                         <button
+                                            disabled={updatingId === order.id}
                                             onClick={() => updateStatus(order.id, "ready")}
-                                            className="w-full bg-emerald-500 hover:bg-emerald-600 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-emerald-500/20"
+                                            className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                                         >
-                                            READY TO SERVE
+                                            {updatingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "READY TO SERVE"}
                                         </button>
                                     )}
                                     {order.status === "ready" && (
                                         <button
+                                            disabled={updatingId === order.id}
                                             onClick={() => updateStatus(order.id, "completed")}
-                                            className="w-full bg-blue-500 hover:bg-blue-600 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                                            className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 active:scale-95 transition-all text-white py-4 rounded-3xl font-black text-sm uppercase tracking-widest shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                                         >
-                                            <CheckCircle2 className="h-5 w-5" /> MARK AS DONE
+                                            {updatingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle2 className="h-5 w-5" /> MARK AS DONE</>}
                                         </button>
                                     )}
                                 </div>

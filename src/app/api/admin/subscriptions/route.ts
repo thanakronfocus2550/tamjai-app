@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
             else if (sub && daysLeft <= 7) status = "Expiring Soon";
 
             return {
-                id: sub?.id || `SUB-${t.id.slice(0, 4).toUpperCase()}`,
+                id: sub?.id || `SUB-${t.id.toUpperCase()}`,
                 store: t.name,
                 owner: t.users[0]?.name || "N/A",
                 plan: t.plan || "FREE",

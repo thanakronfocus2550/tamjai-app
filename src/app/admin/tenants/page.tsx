@@ -25,7 +25,7 @@ export default function TenantsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingTenant, setEditingTenant] = useState<any>(null);
-    const [activeTab, setActiveTab] = useState<"ALL" | "PRO" | "FREE">("ALL");
+    const [activeTab, setActiveTab] = useState<"ALL" | "POS" | "PRO" | "FREE">("ALL");
 
     // Form states
     const [formData, setFormData] = useState({
@@ -67,7 +67,40 @@ export default function TenantsPage() {
     };
 
     const handleAddTenant = async () => {
-        // ... same code ...
+        if (!formData.name || !formData.slug || !formData.adminEmail || !formData.adminPassword) {
+            alert("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน");
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch("/api/admin/tenants", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(formData)
+            });
+
+            if (res.ok) {
+                alert("เพิ่มร้านค้าสำเร็จ!");
+                setIsAddModalOpen(false);
+                setFormData({
+                    name: "",
+                    slug: "",
+                    adminName: "",
+                    adminEmail: "",
+                    adminPassword: "",
+                    plan: "FREE"
+                });
+                fetchTenants();
+            } else {
+                const err = await res.json();
+                alert("เกิดข้อผิดพลาด: " + err.error);
+            }
+        } catch (err) {
+            alert("Failed to add tenant");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleEditClick = (tenant: any) => {
@@ -228,12 +261,12 @@ export default function TenantsPage() {
                     </div>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center shrink-0">
+                    <div className="h-12 w-12 rounded-xl bg-orange-50 text-brand-orange flex items-center justify-center shrink-0">
                         <Crown className="h-6 w-6" />
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-gray-400">แพ็กเกจ Pro</p>
-                        <p className="text-3xl font-black text-gray-900">{tenants.filter(t => t.package === 'PRO').length}</p>
+                        <p className="text-sm font-bold text-gray-400">แพ็กเกจ PRO / POS</p>
+                        <p className="text-3xl font-black text-gray-900">{tenants.filter(t => t.package === 'PRO' || t.package === 'POS').length}</p>
                     </div>
                 </div>
                 <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex items-center gap-4">
@@ -268,9 +301,15 @@ export default function TenantsPage() {
                         </button>
                         <button
                             onClick={() => setActiveTab("PRO")}
-                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-colors shadow-sm ${activeTab === 'PRO' ? 'bg-orange-50 border-brand-orange text-brand-orange' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-colors shadow-sm ${activeTab === 'PRO' ? 'bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
                         >
                             <Crown className="h-4 w-4" /> PRO
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("POS")}
+                            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-colors shadow-sm ${activeTab === 'POS' ? 'bg-orange-50 border-brand-orange text-brand-orange' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                        >
+                            <Store className="h-4 w-4" /> POS
                         </button>
                         <button
                             onClick={() => setActiveTab("FREE")}
@@ -316,8 +355,8 @@ export default function TenantsPage() {
                                     <td className="px-6 py-4 border-b border-t border-gray-100 group-hover:border-gray-200 transition-colors">
                                         <div className="flex flex-col gap-1.5 items-start">
                                             <div className="flex flex-col gap-1 w-full relative">
-                                                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-black uppercase border w-max ${t.package === 'PRO' ? 'bg-orange-50 text-brand-orange border-orange-100' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
-                                                    {t.package === 'PRO' && <Crown className="h-3 w-3" />}
+                                                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-black uppercase border w-max ${t.package === 'POS' ? 'bg-orange-50 text-brand-orange border-orange-100' : t.package === 'PRO' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>
+                                                    {(t.package === 'PRO' || t.package === 'POS') && <Crown className="h-3 w-3" />}
                                                     {t.package}
                                                 </span>
                                                 <span className="text-[9px] font-bold text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 sm:static sm:translate-y-0">
@@ -439,6 +478,7 @@ export default function TenantsPage() {
                                             >
                                                 <option value="FREE">Free Trial</option>
                                                 <option value="PRO">Tamjai Pro</option>
+                                                <option value="POS">Tamjai POS</option>
                                             </select>
                                         </div>
                                     </div>
@@ -633,6 +673,7 @@ export default function TenantsPage() {
                                         >
                                             <option value="FREE">FREE Trial</option>
                                             <option value="PRO">PRO Member</option>
+                                            <option value="POS">POS Member (NEW)</option>
                                         </select>
                                     </div>
                                     <div className="space-y-2">

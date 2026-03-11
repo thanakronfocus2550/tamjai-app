@@ -10,7 +10,7 @@ interface Order {
     shopSlug: string;
     status: string; // new, prepping, ready, completed, cancelled
     totalAmount: any;
-    items: Array<{ name: string; qty: number; price: number; options: { spicy: string; addons: string[]; note: string } }>;
+    items: Array<{ name: string; qty: number; price: number; options: { [key: string]: any } }>;
     customer: { name: string; phone: string; address?: string };
     paymentMethod: string;
     createdAt: string;
@@ -160,9 +160,23 @@ export default function OrderStatusPage({ params }: { params: Promise<{ shop_slu
                                         <span className="font-bold text-orange-500 text-sm">{item.qty}x</span>
                                         <div>
                                             <p className="text-sm font-bold text-gray-900">{item.name}</p>
-                                            <p className="text-[10px] text-gray-400 line-clamp-1 italic">
-                                                {item.options.spicy} {item.options.addons.length > 0 && `· ${item.options.addons.join(", ")}`}
-                                            </p>
+                                            <div className="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-1">
+                                                {Object.entries(item.options || {}).map(([group, labels]) => {
+                                                    if (group === "note") return null;
+                                                    const selected = Array.isArray(labels) ? labels : [labels];
+                                                    if (selected.length === 0) return null;
+                                                    return (
+                                                        <span key={group} className="bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 flex items-center gap-1">
+                                                            <span className="text-gray-500">{group}:</span> {selected.join(", ")}
+                                                        </span>
+                                                    );
+                                                })}
+                                                {item.options.note && (
+                                                    <span className="text-orange-400 italic font-medium w-full mt-0.5">
+                                                        "{item.options.note}"
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     <span className="text-sm font-bold text-gray-900 shrink-0">฿{(item.price * item.qty).toLocaleString()}</span>

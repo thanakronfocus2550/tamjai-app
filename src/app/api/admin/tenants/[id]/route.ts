@@ -46,9 +46,28 @@ export async function DELETE(
 
         const { id } = await params;
 
-        // Delete the tenant (Cascade should ideally handle related users, but if not we can delete dependencies or let prisma handle it based on schema)
-        await prisma.tenant.delete({
-            where: { id }
+        const tenant = await prisma.tenant.findUnique({
+            where: { id },
+            select: { slug: true }
+        });
+
+        if (!tenant) {
+            return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+        }
+
+        // Delete the tenant (Cascade should handle related users, categories, products, orders, subscriptions, helpdesk tickets, and payment approvals)
+        await prisma.$transaction(async (tx) => {
+            // Cleanup records that rely on the slug (no direct DB relation)
+            if (tenant.slug) {
+                await tx.mascotTicket.deleteMany({
+                    where: { shopSlug: tenant.slug }
+                });
+            }
+
+            // Finally delete the tenant
+            await tx.tenant.delete({
+                where: { id }
+            });
         });
 
         return NextResponse.json({ success: true });

@@ -21,6 +21,7 @@ enum Role {
 enum Plan {
   FREE
   PRO
+  POS
 }
 
 model Tenant {
@@ -46,6 +47,9 @@ model Tenant {
   bankAccount   String?
   deliveryEnabled Boolean @default(true)
   pickupEnabled  Boolean  @default(true)
+  promptPayQrUrl String?
+  socialLinks   Json?     // { facebook: string, instagram: string, tiktok: string }
+  weeklyHolidays Json?    // Array of day indices [1, 2] where 1=Monday
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -247,4 +251,12 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model PlatformConfig {
+  id           Int      @id @default(1)
+  platformName String   @default("Tamjai Pro")
+  supportEmail String   @default("support@tamjai.pro")
+  supportPhone String   @default("02-XXX-XXXX")
+  updatedAt    DateTime @updatedAt
 }

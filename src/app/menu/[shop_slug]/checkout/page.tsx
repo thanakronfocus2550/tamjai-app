@@ -109,7 +109,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                     shop_slug,
                     items: cart,
                     customer: { name, phone, address },
-                    payMethod,
+                    // @ts-ignore
                     orderType: orderMode,
                     total: subtotal + deliveryFee, // Send raw total, server will re-apply promo
                     promoCode: promoDiscount > 0 ? promoCode : undefined
@@ -139,41 +139,45 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
 
                 <div className="flex-1 overflow-y-auto pb-32 space-y-4 p-4">
 
-                    {/* Order mode */}
-                    <section className="bg-white border border-gray-100 rounded-2xl p-4">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">วิธีรับอาหาร</p>
-                        <div className="flex bg-gray-100 p-1 rounded-xl gap-1">
-                            {([
-                                { id: "delivery" as OrderMode, label: "เดลิเวอรี่", icon: <Bike className="h-4 w-4" /> },
-                                { id: "pickup" as OrderMode, label: "รับเองที่ร้าน", icon: <Store className="h-4 w-4" /> },
-                            ]).map(m => (
-                                <button key={m.id} onClick={() => setOrderMode(m.id)}
-                                    className={"flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold transition-all " + (orderMode === m.id ? "bg-white text-orange-600 shadow-sm" : "text-gray-500")}
-                                >
-                                    {m.icon}{m.label}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-
                     {/* Customer info */}
                     <section className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
                         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">ข้อมูลผู้รับ</p>
                         <input type="text" placeholder="ชื่อ-นามสกุล *" value={name} onChange={e => setName(e.target.value)}
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
                         <input type="tel" placeholder="เบอร์โทรศัพท์ *" value={phone} onChange={e => setPhone(e.target.value)}
-                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange-400 transition-all font-medium" />
+
                         {orderMode === "delivery" && (
                             <div className="flex items-start gap-2 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2.5">
-                                <MapPin className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
+                                <MapPin className="h-4 w-4 text-orange-500 mt-1 shrink-0" />
                                 <textarea
                                     placeholder="ที่อยู่จัดส่ง (บ้านเลขที่, ซอย, ถนน, เขต) *"
-                                    value={address} onChange={e => setAddress(e.target.value)} rows={2}
-                                    className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none resize-none"
+                                    value={address} onChange={e => setAddress(e.target.value)} rows={3}
+                                    className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none resize-none font-medium"
                                 />
                             </div>
                         )}
                     </section>
+
+                    {/* Order Mode - Re-enabled Pickup */}
+                    <div className="flex bg-gray-100 p-1.5 rounded-2xl gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setOrderMode("delivery")}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${orderMode === "delivery" ? "bg-white text-orange-600 shadow-lg shadow-orange-100/50" : "text-gray-400 hover:text-gray-600"}`}
+                        >
+                            <Bike className="h-4 w-4" />
+                            จัดส่งถึงที่
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setOrderMode("pickup")}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${orderMode === "pickup" ? "bg-white text-orange-600 shadow-lg shadow-orange-100/50" : "text-gray-400 hover:text-gray-600"}`}
+                        >
+                            <Store className="h-4 w-4" />
+                            รับเองที่ร้าน
+                        </button>
+                    </div>
 
                     {/* Promotion Code */}
                     <section className="bg-white border border-gray-100 rounded-2xl p-4">
@@ -238,11 +242,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>ค่าอาหาร</span><span>{"฿" + subtotal}</span>
                             </div>
-                            {orderMode === "delivery" && (
-                                <div className="flex justify-between text-sm text-gray-600">
-                                    <span>ค่าจัดส่ง</span><span>{"฿" + deliveryFee}</span>
-                                </div>
-                            )}
+                            <div className="flex justify-between text-sm text-gray-600">
+                                <span>ค่าจัดส่ง</span><span>{"฿" + deliveryFee}</span>
+                            </div>
                             {promoDiscount > 0 && (
                                 <div className="flex justify-between text-sm text-emerald-600 font-bold">
                                     <span>ส่วนลด ({promoCode})</span><span>{"- ฿" + promoDiscount}</span>

@@ -66,7 +66,10 @@ export async function PATCH(request: NextRequest) {
 
                 await tx.tenant.update({
                     where: { id: approval.tenantId },
-                    data: { plan: "PRO" }
+                    data: {
+                        plan: approval.plan as any,
+                        isActive: true
+                    }
                 });
 
                 await tx.subscription.create({

@@ -372,6 +372,26 @@ const PromotionalPopup = ({ show, onClose, onDismiss, config }: PromoProps) => {
 
 
 export default function Home() {
+  const [platformConfig, setPlatformConfig] = useState({
+    supportEmail: "support@tamjai.pro",
+    supportPhone: "02-XXX-XXXX",
+  });
+
+  useEffect(() => {
+    fetch("/api/config/platform")
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setPlatformConfig({
+            supportEmail: data.supportEmail,
+            supportPhone: data.supportPhone,
+          });
+        }
+      })
+      .catch(err => console.error("Failed to fetch platform config:", err));
+  }, []);
+
+  const { scrollYProgress } = useScroll();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showPromo, setShowPromo] = useState(false);
@@ -1206,60 +1226,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Featured Shops / Demo Section */}
-        <section id="featured" className="py-24 bg-white border-y border-gray-100 overflow-hidden">
-          <div className="mx-auto max-w-7xl px-6 md:px-12">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-              <div className="max-w-2xl">
-                <div className="mb-4 inline-flex items-center gap-2 text-brand-orange font-black text-sm uppercase tracking-widest px-4 py-1.5 bg-orange-50 rounded-full border border-orange-100">
-                  <Store className="h-4 w-4" /> Trusted Shops
-                </div>
-                <h2 className="text-4xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">
-                  ร้านค้าที่ไว้วางใจ<br />ให้ <span className="text-brand-orange">Tamjai Pro</span> ดูแล
-                </h2>
-              </div>
-              <Link href="/register" className="text-brand-orange font-black flex items-center gap-2 group hover:translate-x-1 transition-all">
-                ร่วมเป็นส่วนหนึ่งกับเรา <ArrowRight className="h-5 w-5" />
-              </Link>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[
-                { name: "เจ๊นก", type: "ส้มตำ & อาหารอีสาน", color: "from-orange-400 to-orange-600", slug: "demo-shop" },
-                { name: "มุมโปรด", type: "Cafe & Dessert", color: "from-emerald-400 to-emerald-600", slug: "demo-shop" },
-                { name: "ย่างเนย", type: "บุฟเฟ่ต์ปิ้งย่าง", color: "from-red-400 to-red-600", slug: "demo-shop" }
-              ].map((shop, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  className="group relative h-[350px] rounded-[2.5rem] overflow-hidden shadow-xl"
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${shop.color} opacity-90 group-hover:scale-110 transition-transform duration-700`}></div>
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors"></div>
-
-                  <div className="absolute inset-0 p-10 flex flex-col justify-between items-start text-white">
-                    <div className="h-16 w-16 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center font-black text-xl">
-                      {shop.name.charAt(0)}
-                    </div>
-                    <div className="w-full">
-                      <p className="text-xs font-black uppercase tracking-widest opacity-80 mb-2">{shop.type}</p>
-                      <h3 className="text-3xl font-black mb-6">ร้าน{shop.name}</h3>
-                      <Link
-                        href={`/menu/${shop.slug}`}
-                        target="_blank"
-                        className="inline-flex items-center gap-2 bg-white text-gray-900 px-6 py-3 rounded-2xl font-bold text-sm hover:bg-gray-100 transition-colors shadow-lg"
-                      >
-                        ดูหน้าร้านตัวอย่าง <ExternalLink className="h-4 w-4" />
-                      </Link>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
         {/* FAQ Section */}
         <FaqSection />
       </main>
@@ -1322,9 +1288,11 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <p className="text-sm font-bold text-gray-500">© 2024 Tamjai Pro SaaS Platform. Created with ❤️ for Food Businesses.</p>
-            <div className="flex gap-8">
-              <span className="text-xs font-black text-gray-600 uppercase tracking-widest">Support @ Tamjai.pro</span>
+            <p className="text-sm font-bold text-gray-500">© 2026 Tamjai Pro SaaS Platform. Created with ❤️ for Food Businesses.</p>
+            <div className="flex gap-6 md:gap-8">
+              <Link href="/privacy" className="text-xs font-black text-gray-400 hover:text-brand-orange transition-colors uppercase tracking-widest">Privacy Policy</Link>
+              <Link href="/terms" className="text-xs font-black text-gray-400 hover:text-brand-orange transition-colors uppercase tracking-widest">Terms of Service</Link>
+              <span className="text-xs font-black text-gray-600 uppercase tracking-widest">Support: {platformConfig.supportPhone} | {platformConfig.supportEmail}</span>
             </div>
           </div>
         </div>

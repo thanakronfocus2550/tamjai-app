@@ -2,7 +2,7 @@
 
 import React, { useState, use, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Clock, CheckCircle2, ChevronRight, TrendingUp, ShoppingBag, ChevronDown, MapPin, Phone, Bike, Store, Bell, QrCode, Download, X, ExternalLink } from "lucide-react";
+import { Clock, CheckCircle2, ChevronRight, TrendingUp, ShoppingBag, ChevronDown, MapPin, Phone, Bike, Store, Bell, QrCode, Download, X, ExternalLink, Loader2, Volume2 } from "lucide-react";
 import { playOrderSound, requestNotificationPermission, showBrowserNotification } from "@/hooks/useOrderSound";
 
 
@@ -73,6 +73,8 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
     const [filter, setFilter] = useState<string | "all">("all");
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [notifEnabled, setNotifEnabled] = useState(false);
+    const [alertsActive, setAlertsActive] = useState(true);
+    const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [showQR, setShowQR] = useState(false);
     const prevNewCount = useRef(0);
@@ -85,7 +87,7 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
 
                 // Sound and Notification Logic
                 const newOrders = data.filter((o: any) => o.status === "new");
-                if (newOrders.length > prevNewCount.current && !isLoading) {
+                if (newOrders.length > prevNewCount.current && !isLoading && alertsActive) {
                     playOrderSound();
                     showBrowserNotification(
                         `🔔 ออเดอร์ใหม่!`,
@@ -114,11 +116,13 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
     useEffect(() => {
         const interval = setInterval(fetchOrders, 10000);
         return () => clearInterval(interval);
-    }, [shop_slug, isLoading]);
+    }, [shop_slug, isLoading, alertsActive]);
 
-    const advance = async (orderId: string, currentStatus: string) => {
-        const nextStatus = STATUS_CONFIG[currentStatus as OrderStatus]?.next;
-        if (!nextStatus) return;
+    const updateStatus = async (orderId: string, currentStatus: string, nextStatus: OrderStatus) => {
+        setUpdatingId(orderId);
+
+        // Optimistic update
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: nextStatus } : o));
 
         try {
             const res = await fetch(`/api/orders/${orderId}`, {
@@ -128,11 +132,13 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
             });
 
             if (res.ok) {
-                // Refresh list
-                fetchOrders();
+                await fetchOrders();
             }
         } catch (err) {
             console.error("Failed to update status:", err);
+            fetchOrders(); // Revert on error
+        } finally {
+            setUpdatingId(null);
         }
     };
 
@@ -170,10 +176,33 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
                             <QrCode className="h-3 w-3" /> QR Code
                         </button>
                     </div>
-                    <div className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full ${notifEnabled ? "bg-white/20 text-white" : "bg-black/20 text-white/60"}`}>
-                        <Bell className="h-3 w-3" />
-                        {notifEnabled ? "แจ้งเตือนเปิด" : "แจ้งเตือนปิด"}
-                    </div>
+                    <button
+                        onClick={() => playOrderSound()}
+                        className="h-10 w-10 bg-orange-500/10 text-orange-500 rounded-full flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all active:scale-90"
+                        title="Test Sound"
+                    >
+                        <Volume2 className="h-4 w-4" />
+                    </button>
+
+                    <button
+                        onClick={() => {
+                            if (!notifEnabled) {
+                                requestNotificationPermission().then(() => {
+                                    setNotifEnabled(Notification.permission === "granted");
+                                });
+                            }
+                            if (!alertsActive) {
+                                playOrderSound();
+                            }
+                            setAlertsActive(!alertsActive);
+                        }}
+                        className={`group relative flex items-center gap-2 px-4 py-2.5 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 shadow-lg ${alertsActive ? "bg-white text-orange-600 shadow-orange-500/20" : "bg-black/40 text-white/40 border border-white/10 shadow-none"}`}
+                    >
+                        <Bell className={`h-4 w-4 ${alertsActive && notifEnabled ? "animate-bounce" : ""}`} />
+                        <span>{alertsActive ? "ALERTS ACTIVE" : "ALERTS MUTED"}</span>
+                        {alertsActive && !notifEnabled && <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white animate-pulse" title="Permission Required" />}
+                        {alertsActive && notifEnabled && <span className="absolute -top-1 -right-1 h-3 w-3 bg-emerald-500 rounded-full border-2 border-white animate-pulse" />}
+                    </button>
                 </div>
             </div>
 
@@ -289,19 +318,18 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
                                                         <p className="font-bold text-gray-700 text-sm">{"฿" + item.price * item.qty}</p>
                                                     </div>
                                                     <div className="flex flex-wrap gap-1 mt-1">
-                                                        {item.options?.variants && (
-                                                            <span className="text-[10px] bg-red-50 text-red-500 font-semibold px-1.5 py-0.5 rounded-md">
-                                                                ตัวเลือก: {item.options.variants}
-                                                            </span>
-                                                        )}
-                                                        {item.options?.addons?.map((a: string) => (
-                                                            <span key={a} className="text-[10px] bg-blue-50 text-blue-500 font-semibold px-1.5 py-0.5 rounded-md">
-                                                                + {a}
-                                                            </span>
-                                                        ))}
-                                                        {item.note && (
+                                                        {Object.entries(item.options || {}).map(([group, labels]) => {
+                                                            if (group === "note") return null;
+                                                            const selected = Array.isArray(labels) ? labels : [labels];
+                                                            return selected.map((label: string, idx: number) => (
+                                                                <span key={group + idx} className="text-[10px] bg-orange-50 text-orange-600 font-semibold px-1.5 py-0.5 rounded-md">
+                                                                    {group}: {label}
+                                                                </span>
+                                                            ));
+                                                        })}
+                                                        {item.options?.note && (
                                                             <span className="text-[10px] bg-amber-50 text-amber-600 font-medium px-1.5 py-0.5 rounded-md">
-                                                                📝 {item.note}
+                                                                📝 {item.options.note}
                                                             </span>
                                                         )}
                                                     </div>
@@ -328,16 +356,43 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
                                 </div>
                             )}
 
-                            {/* Action button */}
+                            {/* Action buttons - Unified with Kitchen UI */}
                             <div className="px-4 pb-4">
-                                {cfg.next ? (
-                                    <button onClick={() => advance(order.orderId, order.status)}
-                                        className="w-full bg-orange-500 hover:bg-orange-600 active:scale-[0.98] transition-all text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-orange-100">
-                                        {cfg.nextLabel} <ChevronRight className="h-4 w-4" />
+                                {order.status === "new" && (
+                                    <button
+                                        disabled={updatingId === order.id}
+                                        onClick={() => updateStatus(order.id, order.status, "prepping")}
+                                        className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 active:scale-[0.98] transition-all text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-orange-100 flex items-center justify-center gap-2"
+                                    >
+                                        {updatingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "ACCEPT & COOK"}
                                     </button>
-                                ) : (
-                                    <div className="w-full bg-emerald-50 text-emerald-600 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 border border-emerald-200">
-                                        <CheckCircle2 className="h-4 w-4" /> จัดส่งแล้ว / เสร็จสิ้น
+                                )}
+                                {order.status === "prepping" && (
+                                    <button
+                                        disabled={updatingId === order.id}
+                                        onClick={() => updateStatus(order.id, order.status, "ready")}
+                                        className="w-full bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 active:scale-[0.98] transition-all text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-100 flex items-center justify-center gap-2"
+                                    >
+                                        {updatingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : "READY TO SERVE"}
+                                    </button>
+                                )}
+                                {order.status === "ready" && (
+                                    <button
+                                        disabled={updatingId === order.id}
+                                        onClick={() => updateStatus(order.id, order.status, "completed")}
+                                        className="w-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 active:scale-[0.98] transition-all text-white py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-100 flex items-center justify-center gap-2"
+                                    >
+                                        {updatingId === order.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <><CheckCircle2 className="h-4 w-4" /> MARK AS DONE</>}
+                                    </button>
+                                )}
+                                {order.status === "completed" && (
+                                    <div className="w-full bg-emerald-50 text-emerald-600 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border border-emerald-200">
+                                        <CheckCircle2 className="h-4 w-4" /> COMPLETED / DONE
+                                    </div>
+                                )}
+                                {order.status === "cancelled" && (
+                                    <div className="w-full bg-red-50 text-red-600 py-3.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 border border-red-200">
+                                        <X className="h-4 w-4" /> CANCELLED
                                     </div>
                                 )}
                             </div>

@@ -336,15 +336,23 @@ export default function ApprovalsPage() {
                                         ปิดหน้าต่าง
                                     </button>
                                     {selectedApproval.status === 'Pending' && (
-                                        <button
-                                            onClick={() => {
-                                                handleApprove(selectedApproval.id);
-                                                setSelectedApproval(null);
-                                            }}
-                                            className="flex-2 rounded-2xl bg-brand-orange py-4 text-sm font-black text-white shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
-                                        >
-                                            <CheckCircle2 className="h-5 w-5" /> อนุมัติทันที
-                                        </button>
+                                        <div className="flex-2 flex gap-4">
+                                            <button
+                                                onClick={() => setRejectionTarget(selectedApproval)}
+                                                className="flex-1 rounded-2xl bg-red-50 py-4 text-sm font-black text-red-600 hover:bg-red-100 transition-all flex items-center justify-center gap-2 border border-red-100"
+                                            >
+                                                <XCircle className="h-5 w-5" /> ปฏิเสธสลิป
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    handleApprove(selectedApproval.id);
+                                                    setSelectedApproval(null);
+                                                }}
+                                                className="flex-1 rounded-2xl bg-brand-orange py-4 text-sm font-black text-white shadow-lg shadow-orange-200 hover:bg-orange-600 transition-all flex items-center justify-center gap-2"
+                                            >
+                                                <CheckCircle2 className="h-5 w-5" /> อนุมัติทันที
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             </div>

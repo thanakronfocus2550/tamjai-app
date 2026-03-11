@@ -6,7 +6,7 @@ import { ShoppingBag, Clock, ChevronLeft, Plus, Minus, X, ChevronDown, MapPin, B
 import { useCart, CartItem as GlobalCartItem } from "@/context/CartContext";
 
 // ─── Types ─────────────────────────────────────────────
-type OrderType = "delivery" | "pickup" | "table";
+type OrderType = "delivery" | "pickup";
 
 interface CartItem {
     id: string;
@@ -264,7 +264,7 @@ export default function MenuPage({ params, searchParams }: {
 
     const { cart, addToCart: addToCartCtx, cartTotal, cartCount } = useCart();
 
-    const [orderType, setOrderType] = useState<OrderType>(tableNumber ? "table" : "delivery");
+    const [orderType, setOrderType] = useState<OrderType>("delivery");
     const [activeCategory, setActiveCategory] = useState("");
     const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
     const [address, setAddress] = useState("");
@@ -319,12 +319,8 @@ export default function MenuPage({ params, searchParams }: {
                     const canDelivery = settingsData.deliveryEnabled ?? true;
                     const canPickup = settingsData.pickupEnabled ?? true;
 
-                    // If currently on table mode (from QR), keep it. 
-                    // Otherwise, pick the first available method.
-                    if (orderType !== "table") {
-                        if (canDelivery) setOrderType("delivery");
-                        else if (canPickup) setOrderType("pickup");
-                    }
+                    if (canDelivery) setOrderType("delivery");
+                    else if (canPickup) setOrderType("pickup");
                 }
             } catch (err) {
                 console.error("Failed to fetch menu data", err);
@@ -395,9 +391,8 @@ export default function MenuPage({ params, searchParams }: {
     const recommendedItems = menuItems.filter(m => m.isRecommended);
 
     const ORDER_TYPES: { id: OrderType; label: string; icon: React.ReactNode }[] = [
-        { id: "delivery", label: "เดลิเวอรี่", icon: <Bike className="h-4 w-4" /> },
-        { id: "pickup", label: "รับเอง", icon: <Store className="h-4 w-4" /> },
-        { id: "table", label: "ทานที่ร้าน", icon: <Users className="h-4 w-4" /> },
+        { id: "delivery", label: "จัดส่งถึงที่ (DELIVERY)", icon: <Bike className="h-4 w-4" /> },
+        { id: "pickup", label: "รับกลับบ้าน (PICKUP)", icon: <Store className="h-4 w-4" /> },
     ];
 
     return (
@@ -453,7 +448,7 @@ export default function MenuPage({ params, searchParams }: {
                         </div>
 
                         {/* Order type tabs */}
-                        <div className="flex bg-gray-100 p-1 rounded-2xl gap-0.5">
+                        <div className="flex bg-gray-100 p-1.5 rounded-2xl gap-0.5">
                             {ORDER_TYPES.filter(t => {
                                 if (t.id === "delivery") return settings?.deliveryEnabled ?? true;
                                 if (t.id === "pickup") return settings?.pickupEnabled ?? true;
@@ -493,13 +488,6 @@ export default function MenuPage({ params, searchParams }: {
                                     onChange={e => setAddress(e.target.value)}
                                     className="flex-1 bg-transparent text-sm font-semibold text-gray-700 placeholder-gray-400 outline-none"
                                 />
-                            </div>
-                        )}
-                        {/* Table info (shown when table mode) */}
-                        {orderType === "table" && tableNumber && (
-                            <div className="mt-3 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-sm text-blue-700 font-medium flex items-center gap-2">
-                                <Users className="h-4 w-4 shrink-0" />
-                                โต๊ะ {tableNumber}
                             </div>
                         )}
                     </header>

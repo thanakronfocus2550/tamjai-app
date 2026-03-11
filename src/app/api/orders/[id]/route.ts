@@ -12,16 +12,23 @@ export async function PATCH(
         const { id } = await params;
 
         // 1. Fetch current order to check tenant ownership
-        const currentOrder = await prisma.order.findUnique({
-            where: { orderId: id }
+        // Try id (PK) first, then fallback to orderId
+        let currentOrder = await prisma.order.findUnique({
+            where: { id }
         });
+
+        if (!currentOrder) {
+            currentOrder = await prisma.order.findUnique({
+                where: { orderId: id }
+            });
+        }
 
         if (!currentOrder) {
             return NextResponse.json({ error: "Order not found" }, { status: 404 });
         }
 
         // 2. Security Check: Only SuperAdmin or TenantAdmin for THIS shop
-        if (!session || (session.user.role !== "SUPER_ADMIN" && session.user.shopSlug !== currentOrder.shopSlug)) {
+        if (!session || (session.user.role !== "SUPER_ADMIN" && session.user.tenantId !== currentOrder.tenantId)) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
@@ -33,7 +40,7 @@ export async function PATCH(
         }
 
         const order = await prisma.order.update({
-            where: { orderId: id },
+            where: { id: currentOrder.id }, // Use the absolute id we found
             data: { status }
         });
 

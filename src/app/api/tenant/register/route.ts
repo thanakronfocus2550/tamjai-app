@@ -4,18 +4,53 @@ import bcrypt from "bcryptjs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from "fs";
 import path from "path";
+import { registerSchema } from "@/lib/validations/register";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, shopName, shopSlug, email, password, plan, slipBase64, couponCode } = body;
 
-        // Basic validation
-        if (!name || !shopName || !shopSlug || !email || !password) {
+        // Honeypot check
+        if (body.extra_info && body.extra_info.length > 0) {
+            console.warn("Honeypot triggered! Bot detected.");
             return NextResponse.json(
-                { message: "ข้อมูลไม่ครบถ้วน กรุณากรอกให้ครบ" },
+                { message: "ระบบตรวจพบการทำรายการที่ผิดปกติ (Bot Detection)" },
+                { status: 400 }
+            );
+        }
+
+        // Zod validation
+        const validation = registerSchema.safeParse(body);
+        if (!validation.success) {
+            const firstError = validation.error.issues[0].message;
+            return NextResponse.json(
+                { message: firstError },
+                { status: 400 }
+            );
+        }
+
+        const {
+            fullName: name,
+            shopName,
+            subdomain: shopSlug,
+            email,
+            phone,
+            password,
+            plan,
+            slipBase64,
+            couponCode
+        } = validation.data;
+
+        // Check if phone already exists
+        const existingPhone = await prisma.tenant.findFirst({
+            where: { phone },
+        });
+
+        if (existingPhone) {
+            return NextResponse.json(
+                { message: "เบอร์โทรศัพท์นี้มีการลงทะเบียนร้านค้าแล้ว" },
                 { status: 400 }
             );
         }
@@ -69,7 +104,8 @@ export async function POST(req: Request) {
                     create: {
                         name: shopName,
                         slug: shopSlug,
-                        plan: plan === 'pro' ? 'PRO' : 'FREE',
+                        phone, // Save the phone number
+                        plan: plan.toUpperCase(),
                         refCode, // Save the generated code
                         isActive: false, // Require Superadmin approval for 7-day free trial
                         themeConfig: {
@@ -83,8 +119,8 @@ export async function POST(req: Request) {
 
         const tenant = user.tenant!;
 
-        // Handle slip upload for PRO plan
-        if (plan === 'pro' && slipBase64) {
+        // Handle slip upload for PRO or POS plan
+        if ((plan === 'pro' || plan === 'pos') && slipBase64) {
             try {
                 // Extract base64 data
                 const matches = slipBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
@@ -116,8 +152,8 @@ export async function POST(req: Request) {
                         data: {
                             refId: `PAY-${Date.now()}`,
                             tenantId: tenant.id,
-                            plan: 'PRO',
-                            amount: couponCode === 'TAMJAI100' ? 350 : 450,
+                            plan: plan.toUpperCase(),
+                            amount: plan === 'pos' ? 600 : (couponCode === 'TAMJAI100' ? 350 : 450),
                             bank: `โอนเข้าแพลตฟอร์ม`,
                             status: 'PENDING',
                             slipUrl: fileUrl, // Might be null on Vercel, but record is created

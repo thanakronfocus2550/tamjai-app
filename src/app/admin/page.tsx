@@ -116,7 +116,7 @@ export default function AdminDashboard() {
                     { label: "ร้านค้าทั้งหมด", value: (stats?.tenants || 0) + " ร้าน", trend: "+5 ร้าน", color: "text-gray-900", icon: Store, bg: "bg-gray-100" },
                     { label: "สมาชิก PRO", value: (stats?.proTenants || 0) + " ร้าน", trend: "88% จากทั้งหมด", color: "text-emerald-600", icon: Crown, bg: "bg-emerald-50" },
                     { label: "รหัสโปรโมชั่น", value: (stats?.promoCodes || 0) + " รหัส", trend: "3 รหัสใหม่", color: "text-purple-600", icon: CheckCircle2, bg: "bg-purple-50" },
-                    { label: "การใช้งานโปรฯ", value: (stats?.promoUsage || 0).toLocaleString() + " ครั้ง", trend: "รวมทุกร้าน", color: "text-blue-600", icon: ArrowUpRight, bg: "bg-blue-50" },
+                    { label: "รอการชำระเงิน/อนุมัติ", value: (stats?.notifications?.paymentApprovals || 0) + " รายการ", trend: "คลิกเพื่อดู", color: "text-rose-600", icon: AlertCircle, bg: "bg-rose-50" },
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
@@ -142,6 +142,57 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid gap-8 lg:grid-cols-3">
+                {/* Pending Registrations Widget */}
+                {stats?.notifications?.pendingRegistrations?.length > 0 && (
+                    <motion.div variants={itemVariants} className="lg:col-span-3 rounded-[2.5rem] bg-rose-50/50 p-8 border border-rose-100 shadow-[0_4px_24px_-12px_rgba(255,0,0,0.05)] relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-rose-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+                        <div className="relative z-10 flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-xl font-black tracking-tight text-gray-900 flex items-center gap-3">
+                                    <AlertCircle className="h-6 w-6 text-rose-500" />
+                                    รายการรออนุมัติ (Pending Registrations)
+                                </h3>
+                                <p className="text-sm text-gray-500 font-medium">กรุณาตรวจสอบสลิปและอนุมัติการเปิดใช้งานร้านค้า</p>
+                            </div>
+                            <button
+                                onClick={() => router.push('/admin/approvals')}
+                                className="px-4 py-2 rounded-xl bg-white border border-rose-200 text-rose-600 text-xs font-black shadow-sm hover:bg-rose-500 hover:text-white transition-all"
+                            >
+                                ดูทั้งหมด
+                            </button>
+                        </div>
+
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {stats.notifications.pendingRegistrations.map((reg: any, i: number) => (
+                                <div key={i} className="bg-white rounded-2xl p-5 border border-rose-100 shadow-sm hover:shadow-md transition-shadow relative group">
+                                    <div className="flex items-center gap-4 mb-3">
+                                        <div className="h-10 w-10 rounded-xl bg-rose-50 flex items-center justify-center text-lg shadow-sm">🏪</div>
+                                        <div>
+                                            <p className="text-sm font-black text-gray-900 truncate max-w-[150px]">{reg.tenantName}</p>
+                                            <p className="text-[10px] font-black uppercase text-gray-400">Ref: {reg.refId}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase border ${reg.plan === 'POS' ? 'bg-orange-50 text-brand-orange border-orange-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                                            {reg.plan}
+                                        </span>
+                                        <span className="text-xs font-black text-rose-600">฿{parseFloat(reg.amount).toLocaleString()}</span>
+                                    </div>
+                                    <div className="mt-3 text-[9px] font-bold text-gray-400 flex items-center gap-1">
+                                        <TrendingUp className="h-3 w-3" /> {new Date(reg.createdAt).toLocaleString('th-TH')}
+                                    </div>
+                                    <button
+                                        onClick={() => router.push('/admin/approvals')}
+                                        className="absolute top-4 right-4 p-2 rounded-full bg-gray-50 text-gray-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-rose-500 hover:text-white"
+                                    >
+                                        <ArrowUpRight className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+
                 {/* Revenue Graph */}
                 <motion.div variants={itemVariants} className="lg:col-span-2 rounded-[2.5rem] bg-white p-8 border border-gray-100 shadow-[0_4px_24px_-12px_rgba(0,0,0,0.05)] relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-brand-orange/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>

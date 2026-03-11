@@ -30,7 +30,10 @@ export async function GET(
                 themeColor: true,
                 logoUrl: true,
                 bannerUrl: true,
-                description: true
+                description: true,
+                promptPayQrUrl: true,
+                socialLinks: true,
+                weeklyHolidays: true
             }
         });
 

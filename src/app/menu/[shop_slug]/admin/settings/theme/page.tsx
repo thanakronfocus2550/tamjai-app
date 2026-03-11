@@ -6,7 +6,8 @@ import { useSession } from "next-auth/react";
 import { Palette, CheckCircle2, RefreshCw, Save, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function ThemeSettingsPage() {
+export default function ThemeSettingsPage({ params }: { params: Promise<{ shop_slug: string }> }) {
+    const { shop_slug } = React.use(params);
     const { data: session } = useSession();
     const router = useRouter();
 
@@ -21,9 +22,12 @@ export default function ThemeSettingsPage() {
     useEffect(() => {
         const fetchConfig = async () => {
             try {
-                // To fetch existing settings, ideally we have a GET endpoint
-                // Since this page is nested under `menu/[shop_slug]`, we could fetch public store config 
-                // or create a dedicated GET for the tenant profile. For now, we will assume empty defaults if we can't fetch.
+                const res = await fetch(`/api/menu/${shop_slug}/settings`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setThemeColor(data.themeColor || "#FF6B00");
+                    setLogoUrl(data.logoUrl || "");
+                }
                 setIsLoading(false);
             } catch (err) {
                 console.error("Failed to load settings:", err);
@@ -34,7 +38,7 @@ export default function ThemeSettingsPage() {
         if (session) {
             fetchConfig();
         }
-    }, [session]);
+    }, [session, shop_slug]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -43,8 +47,8 @@ export default function ThemeSettingsPage() {
         setSuccess(false);
 
         try {
-            const res = await fetch("/api/tenant/theme", {
-                method: "POST",
+            const res = await fetch(`/api/menu/${shop_slug}/settings`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ themeColor, logoUrl }),
             });
@@ -56,7 +60,7 @@ export default function ThemeSettingsPage() {
 
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
-            router.refresh(); // Refresh nextjs cache so header/layout updates
+            router.refresh();
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -115,7 +119,7 @@ export default function ThemeSettingsPage() {
                         สีหลักของร้าน (Primary Color)
                     </h3>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pl-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:pl-10">
                         <div className="space-y-4">
                             <label className="block text-sm font-bold text-gray-700">เลือกสีของคุณ:</label>
                             <div className="flex flex-wrap gap-3">
@@ -175,7 +179,7 @@ export default function ThemeSettingsPage() {
                         โลโก้ร้านค้า (Store Logo)
                     </h3>
 
-                    <div className="pl-10 space-y-4">
+                    <div className="md:pl-10 space-y-4">
                         <label className="block text-sm font-bold text-gray-700">URL รูปภาพโลโก้ (รองรับ PNG, JPG, WebP)</label>
                         <div className="flex items-center gap-4">
                             <div className="flex-1 relative">

@@ -21,6 +21,11 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
         deliveryEnabled: true,
         pickupEnabled: true,
         lineUserId: "",
+        description: "",
+        bannerUrl: "",
+        promptPayQrUrl: "",
+        socialLinks: { facebook: "", instagram: "", tiktok: "" },
+        weeklyHolidays: [] as number[],
     });
 
     useEffect(() => {
@@ -41,6 +46,11 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
                         deliveryEnabled: data.deliveryEnabled ?? true,
                         pickupEnabled: data.pickupEnabled ?? true,
                         lineUserId: data.lineUserId || "",
+                        description: data.description || "",
+                        bannerUrl: data.bannerUrl || "",
+                        promptPayQrUrl: data.promptPayQrUrl || "",
+                        socialLinks: data.socialLinks || { facebook: "", instagram: "", tiktok: "" },
+                        weeklyHolidays: data.weeklyHolidays || [],
                     });
                 }
             } catch (err) {
@@ -117,6 +127,39 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
                     <textarea value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} rows={2}
                         className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
                 </div>
+                <div>
+                    <label className="text-xs font-semibold text-gray-500 block mb-1">คำอธิบายร้าน / ประกาศ (Bio)</label>
+                    <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
+                        placeholder="เช่น ร้านส้มตำรสเด็ดแซ่บสะท้านทรวง เปิดให้บริการแล้ว!"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+                </div>
+            </section>
+
+            {/* Social Links */}
+            <section className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-orange-500" /> โซเชียลมีเดีย
+                </h3>
+                <div className="space-y-3">
+                    <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">Facebook URL</label>
+                        <input value={form.socialLinks.facebook} onChange={e => setForm({ ...form, socialLinks: { ...form.socialLinks, facebook: e.target.value } })}
+                            placeholder="https://facebook.com/your-store"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400 transition-all" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">Instagram URL</label>
+                        <input value={form.socialLinks.instagram} onChange={e => setForm({ ...form, socialLinks: { ...form.socialLinks, instagram: e.target.value } })}
+                            placeholder="https://instagram.com/your-store"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400 transition-all" />
+                    </div>
+                    <div>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">TikTok URL</label>
+                        <input value={form.socialLinks.tiktok} onChange={e => setForm({ ...form, socialLinks: { ...form.socialLinks, tiktok: e.target.value } })}
+                            placeholder="https://tiktok.com/@your-store"
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-orange-400 transition-all" />
+                    </div>
+                </div>
             </section>
 
             {/* Opening hours */}
@@ -149,6 +192,72 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
                     >
                         <span className={"absolute top-0.5 h-6 w-6 bg-white rounded-full shadow-sm transition-all " + (form.isOpen ? "left-5" : "left-0.5")} />
                     </button>
+                </div>
+
+                <hr className="border-gray-50" />
+                <div>
+                    <p className="font-semibold text-gray-900 text-sm mb-2">วันหยุดประจำสัปดาห์</p>
+                    <div className="flex flex-wrap gap-2">
+                        {["จัน", "อัง", "พุธ", "พฤ", "ศุก", "สอ", "อา"].map((day, i) => {
+                            const dayIndex = (i + 1) % 7; // Adjust to match your expected 1=Mon, 0=Sun logic or similar
+                            const isHoliday = form.weeklyHolidays.includes(dayIndex);
+                            return (
+                                <button
+                                    key={day}
+                                    onClick={() => {
+                                        const newHolidays = isHoliday
+                                            ? form.weeklyHolidays.filter(h => h !== dayIndex)
+                                            : [...form.weeklyHolidays, dayIndex];
+                                        setForm({ ...form, weeklyHolidays: newHolidays });
+                                    }}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isHoliday ? "bg-red-500 text-white shadow-sm" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
+                                >
+                                    {day}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </section>
+
+            {/* Media Settings */}
+            <section className="bg-white border border-gray-100 rounded-2xl p-4 space-y-4">
+                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                    <Save className="h-4 w-4 text-indigo-500" /> สื่อและไฟล์ภาพ
+                </h3>
+
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-xs font-semibold text-gray-500 block mb-2">รูปภาพหน้าปก (Store Banner)</label>
+                        <div className="relative h-32 w-full rounded-2xl bg-gray-100 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">
+                            {form.bannerUrl ? (
+                                <>
+                                    <img src={form.bannerUrl} alt="Banner" className="h-full w-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <button onClick={() => setForm({ ...form, bannerUrl: "" })} className="text-white text-xs font-bold bg-red-500 px-3 py-1 rounded-full">ลบรูปภาพ</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <button className="text-xs font-bold text-gray-400">+ อัปโหลดรูปหน้าปก</button>
+                            )}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="text-xs font-semibold text-gray-500 block mb-2">QR Code พร้อมเพย์</label>
+                        <div className="relative h-48 w-48 mx-auto rounded-2xl bg-gray-100 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden group">
+                            {form.promptPayQrUrl ? (
+                                <>
+                                    <img src={form.promptPayQrUrl} alt="PromptPay QR" className="h-full w-full object-contain p-2" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <button onClick={() => setForm({ ...form, promptPayQrUrl: "" })} className="text-white text-xs font-bold bg-red-500 px-3 py-1 rounded-full">ลบรูปภาพ</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <button className="text-xs font-bold text-gray-400">+ อัปโหลด QR Code</button>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </section>
 
