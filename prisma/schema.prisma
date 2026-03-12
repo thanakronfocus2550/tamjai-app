@@ -1,100 +1,84 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-enum Role {
-  SUPER_ADMIN
-  TENANT_ADMIN
-  STAFF
-}
-
-enum Plan {
-  FREE
-  PRO
-  POS
-}
-
 model Tenant {
-  id            String    @id @default(cuid())
-  name          String
-  slug          String    @unique
-  customDomain  String?   @unique
-  refCode       String?   @unique // Registration reference code
-  plan          Plan      @default(FREE)
-  logoUrl       String?
-  themeColor    String    @default("#FF6B00")
-  themeConfig   Json?     // { primaryColor: string, darkMode: boolean, etc }
-  isActive      Boolean   @default(true)
-  isOpen        Boolean   @default(true)
-  lineUserId    String?   // LINE User ID for Messaging API
-  phone         String?
-  bannerUrl     String?
-  description   String?   @db.Text
-  address       String?
-  openTime      String    @default("09:00")
-  closeTime     String    @default("21:00")
-  bankName      String    @default("กสิกรไทย (KBank)")
-  bankAccount   String?
-  deliveryEnabled Boolean @default(true)
-  pickupEnabled  Boolean  @default(true)
-  deliveryFee    Decimal  @default(30)
-  promptPayQrUrl String?
-  socialLinks   Json?     // { facebook: string, instagram: string, tiktok: string }
-  weeklyHolidays Json?    // Array of day indices [1, 2] where 1=Monday
-  addBefriendService Boolean @default(false)
-  trialEndsAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  users         User[]
-  categories    Category[]
-  products      Product[]
-  orders        Order[]
-  tables        Table[]
-  shifts        Shift[]
-  subscriptions Subscription[]
-  helpdeskTickets HelpdeskTicket[]
-  paymentApprovals PaymentApproval[]
+  id                 String            @id @default(cuid())
+  name               String
+  slug               String            @unique
+  customDomain       String?           @unique
+  refCode            String?           @unique
+  plan               Plan              @default(FREE)
+  logoUrl            String?
+  themeColor         String            @default("#FF6B00")
+  themeConfig        Json?
+  isActive           Boolean           @default(true)
+  isOpen             Boolean           @default(true)
+  lineUserId         String?
+  phone              String?
+  bannerUrl          String?
+  description        String?
+  address            String?
+  openTime           String            @default("09:00")
+  closeTime          String            @default("21:00")
+  bankName           String            @default("กสิกรไทย (KBank)")
+  bankAccount        String?
+  deliveryEnabled    Boolean           @default(true)
+  pickupEnabled      Boolean           @default(true)
+  deliveryFee        Decimal           @default(30)
+  promptPayQrUrl     String?
+  socialLinks        Json?
+  weeklyHolidays     Json?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  addBefriendService Boolean           @default(false)
+  trialEndsAt        DateTime?
+  categories         Category[]
+  helpdeskTickets    HelpdeskTicket[]
+  orders             Order[]
+  paymentApprovals   PaymentApproval[]
+  products           Product[]
+  shifts             Shift[]
+  subscriptions      Subscription[]
+  tables             Table[]
+  users              User[]
 }
 
 model Shift {
-  id           String    @id @default(cuid())
-  tenantId     String
-  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  staffId      String
-  openedAt     DateTime  @default(now())
-  closedAt     DateTime?
-  cashIn       Decimal   @default(0)
-  cashOut      Decimal?
-  actualCash   Decimal?
-  difference   Decimal?
-  status       String    @default("OPEN") // OPEN, CLOSED
-  notes        String?   @db.Text
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  tenantId   String
+  staffId    String
+  openedAt   DateTime  @default(now())
+  closedAt   DateTime?
+  cashIn     Decimal   @default(0)
+  cashOut    Decimal?
+  actualCash Decimal?
+  difference Decimal?
+  status     String    @default("OPEN")
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Table {
   id           String   @id @default(cuid())
   number       String
-  status       String   @default("vacant") // vacant, occupied, cleaning, reserved, billing
+  status       String   @default("vacant")
   capacity     Int      @default(4)
-  currentItems Json?    // Array of { id, name, price, qty, imageUrl }
-  customer     String?  // Customer name for the table
   tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  currentItems Json?
+  customer     String?
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, number])
 }
@@ -106,50 +90,50 @@ model User {
   name          String?
   image         String?
   password      String
-  posPin        String?   // Alphanumeric PIN for POS terminal
   role          Role      @default(TENANT_ADMIN)
   tenantId      String?
-  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
-  @@unique([tenantId, posPin])
+  posPin        String?
   accounts      Account[]
   sessions      Session[]
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, posPin])
 }
 
 model Category {
   id        String    @id @default(cuid())
   name      String
-  slug      String
-  order     Int       @default(0)
   tenantId  String
-  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  slug      String
+  order     Int       @default(0)
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products  Product[]
 
   @@unique([tenantId, slug])
   @@unique([tenantId, name])
 }
 
 model Product {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   name          String
   description   String?
   price         Float
   imageUrl      String?
   categoryId    String
-  category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  isAvailable   Boolean   @default(true)
-  isRecommended Boolean   @default(false)
-  addons        Json?     // Array of { name: string, price: number }
-  stockQuantity Int       @default(0)
-  trackStock    Boolean   @default(false)
+  isAvailable   Boolean  @default(true)
+  isRecommended Boolean  @default(false)
+  addons        Json?
+  stockQuantity Int      @default(0)
+  trackStock    Boolean  @default(false)
   tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  category      Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, name])
 }
@@ -158,76 +142,76 @@ model Order {
   id            String   @id @default(cuid())
   orderId       String   @unique
   shopSlug      String
-  customer      Json     // { name, phone, address }
-  items         Json     // Array of { name, qty, price, options }
+  customer      Json
+  items         Json
   totalAmount   Decimal
-  tableNumber   String?
-  riderName     String?  // Optional name of the rider assigned
-  status        String   @default("new") // new, prepping, ready, completed, cancelled
-  orderType     String   @default("pickup") // pickup, delivery, dinein
+  status        String   @default("new")
+  orderType     String   @default("pickup")
   paymentMethod String   @default("cash")
-  source        String   @default("storefront") // storefront, pos
+  source        String   @default("storefront")
   tenantId      String
-  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  riderName     String?
+  tableNumber   String?
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Subscription {
-  id            String    @id @default(cuid())
-  tenantId      String
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  amount        Decimal
-  startDate     DateTime  @default(now())
-  endDate       DateTime
-  status        String    @default("ACTIVE")
+  id        String   @id @default(cuid())
+  tenantId  String
+  amount    Decimal
+  startDate DateTime @default(now())
+  endDate   DateTime
+  status    String   @default("ACTIVE")
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model HelpdeskTicket {
   id        String   @id @default(cuid())
-  ticketId  String   @unique // TK-2024-001 format
+  ticketId  String   @unique
   tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   subject   String
-  status    String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
-  priority  String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL
+  status    String   @default("OPEN")
+  priority  String   @default("MEDIUM")
   ownerName String
   email     String
-  messages  Json     @default("[]") // Array of { role: 'merchant'|'admin', content: string, createdAt: date }
+  messages  Json     @default("[]")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model Promotion {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  type        String   // PERCENTAGE, FIXED
+  id          String    @id @default(cuid())
+  code        String    @unique
+  type        String
   value       Decimal
-  minPurchase Decimal? @default(0)
-  usageCount  Int      @default(0)
+  minPurchase Decimal?  @default(0)
+  usageCount  Int       @default(0)
   usageLimit  Int?
-  status      String   @default("ACTIVE") // ACTIVE, WARNING, EXPIRED, INACTIVE
+  status      String    @default("ACTIVE")
   expiryDate  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model PaymentApproval {
-  id          String   @id @default(cuid())
-  refId       String   @unique // PAY-001 format
+  id          String    @id @default(cuid())
+  refId       String    @unique
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   plan        String
   amount      Decimal
   bank        String
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status      String    @default("PENDING")
   slipUrl     String?
-  reason      String?  // Rejection reason
-  processedBy String?  // Admin name
+  reason      String?
+  processedBy String?
   processedAt DateTime?
-  aiAnalysis  Json?     // AI analysis result (amount, date, time, confidence, etc.)
+  aiAnalysis  Json?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
 
 model FaqItem {
@@ -243,44 +227,41 @@ model FaqItem {
 
 model MascotTicket {
   id        String   @id @default(cuid())
-  shopSlug  String   // "general" for public or actual slug
+  shopSlug  String
   subject   String
-  message   String   @db.Text
-  status    String   @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED
+  message   String
+  status    String   @default("PENDING")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model BroadcastMessage {
-  id        String   @id @default(cuid())
-  title     String
-  content   String   @db.Text
-  type      String   @default("INFO") // INFO, WARNING, SUCCESS, URGENT
-  author    String   @default("System Admin")
-  isGlobal  Boolean  @default(true)
-  targetTenants Json?    // Array of tenant IDs if not global
-  expiresAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  title         String
+  content       String
+  type          String    @default("INFO")
+  author        String    @default("System Admin")
+  isGlobal      Boolean   @default(true)
+  targetTenants Json?
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
-// NextAuth Models
-
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -307,4 +288,16 @@ model PlatformConfig {
   supportEmail String   @default("support@tamjai.pro")
   supportPhone String   @default("02-XXX-XXXX")
   updatedAt    DateTime @updatedAt
+}
+
+enum Role {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  STAFF
+}
+
+enum Plan {
+  FREE
+  PRO
+  POS
 }

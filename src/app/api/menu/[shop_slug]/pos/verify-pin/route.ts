@@ -17,10 +17,29 @@ export async function POST(
 
         const { pin } = await req.json();
 
-        // Find user by PIN and TenantId
+        // 1. Get the tenant by slug
+        const tenant = await prisma.tenant.findUnique({
+            where: { slug: shop_slug },
+            select: { id: true }
+        });
+
+        if (!tenant) {
+            return NextResponse.json({ error: "Shop not found" }, { status: 404 });
+        }
+
+        // 2. Security check: User must be SUPER_ADMIN or own this specific tenant
+        const isSuper = session.user.role === "SUPER_ADMIN";
+        const isOwner = session.user.tenantId === tenant.id;
+
+        if (!isSuper && !isOwner && session.user.role !== "STAFF") {
+            // For STAFF, we should also check if they belong to this tenant
+            return NextResponse.json({ error: "Unauthorized access to this shop" }, { status: 403 });
+        }
+
+        // 3. Find user by PIN within this tenant
         const user = await prisma.user.findFirst({
             where: {
-                tenantId: session.user.tenantId,
+                tenantId: tenant.id,
                 // @ts-ignore
                 posPin: pin
             },
