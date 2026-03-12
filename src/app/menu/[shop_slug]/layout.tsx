@@ -61,7 +61,7 @@ export default async function MenuLayout({
                     <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
                     <h1 className="text-xl font-black text-gray-900 mb-2">เกิดข้อผิดพลาดในการโหลดข้อมูล</h1>
                     <p className="text-gray-500 font-medium text-sm">{err.message || "กรุณาลองใหม่อีกครั้งในภายหลัง"}</p>
-                    <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold">ลองใหม่อีกครั้ง</button>
+                    <a href={`/menu/${shop_slug}`} className="mt-6 inline-block px-6 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold">ลองใหม่อีกครั้ง</a>
                 </div>
             </div>
         );
