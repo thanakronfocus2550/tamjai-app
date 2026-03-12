@@ -112,14 +112,14 @@ export async function POST(req: Request) {
         const user = await prisma.user.create({
             data: {
                 name,
-                email,
+                email: email.trim(),
                 password: hashedPassword,
-                posPin,
+                posPin: posPin?.trim(),
                 role: "TENANT_ADMIN",
                 tenant: {
                     create: {
                         name: shopName,
-                        slug: shopSlug,
+                        slug: shopSlug.toLowerCase().trim(),
                         phone, // Save the phone number
                         plan: plan.toUpperCase() as any,
                         refCode, // Save the generated code
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
                         addBefriendService: addBefriendService || false,
                         trialEndsAt: isTrial ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null,
                         themeConfig: {
-                            primaryColor: plan.toLowerCase() === 'pos' ? "#7C3AED" : "#FF6B00", // Purple for POS, Orange for others
+                            primaryColor: (plan || "").toLowerCase() === 'pos' ? "#7C3AED" : "#FF6B00", // Purple for POS, Orange for others
                         },
                     } as any
                 }

@@ -25,8 +25,9 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Missing credentials");
                 }
 
+                const email = credentials.email.trim();
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
+                    where: { email },
                     include: { tenant: true },
                 });
 

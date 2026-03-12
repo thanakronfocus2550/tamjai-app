@@ -63,8 +63,8 @@ export async function POST(request: NextRequest) {
         const result = await prisma.$transaction(async (tx) => {
             const tenant = await tx.tenant.create({
                 data: {
-                    name,
-                    slug,
+                    name: name.trim(),
+                    slug: slug.toLowerCase().trim(),
                     plan: (plan || "FREE").toUpperCase() as any,
                     themeColor: (plan || "").toUpperCase() === "POS" ? "#7C3AED" : "#FF6B00",
                 }

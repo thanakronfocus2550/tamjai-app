@@ -15,15 +15,17 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const { pin } = await req.json();
+        const { pin: rawPin } = await req.json();
+        const pin = rawPin.trim();
 
         // 1. Get the tenant by slug
         const tenant = await prisma.tenant.findUnique({
             where: { slug: shop_slug },
-            select: { id: true }
+            select: { id: true, name: true }
         });
 
         if (!tenant) {
+            console.error(`[POS PIN ERROR] Shop not found for slug: ${shop_slug}`);
             return NextResponse.json({ error: "Shop not found" }, { status: 404 });
         }
 
@@ -32,26 +34,41 @@ export async function POST(
         const isOwner = session.user.tenantId === tenant.id;
 
         if (!isSuper && !isOwner && session.user.role !== "STAFF") {
-            // For STAFF, we should also check if they belong to this tenant
+            console.warn(`[POS PIN ERROR] Unauthorized access attempt to shop ${shop_slug} by user ${session.user.id} (role: ${session.user.role})`);
             return NextResponse.json({ error: "Unauthorized access to this shop" }, { status: 403 });
         }
 
-        // 3. Find user by PIN within this tenant
+        // 3. Find user by PIN
+        // Create lookup conditions
+        const orConditions: any[] = [
+            { tenantId: tenant.id, posPin: pin }
+        ];
+
+        // If Super Admin, allow their global PIN or master PIN "000000"
+        if (isSuper) {
+            orConditions.push({ role: "SUPER_ADMIN", posPin: pin });
+            if (pin === "000000") {
+                orConditions.push({ role: "SUPER_ADMIN" });
+            }
+        }
+
         const user = await prisma.user.findFirst({
             where: {
-                tenantId: tenant.id,
-                // @ts-ignore
-                posPin: pin
+                OR: orConditions
             },
             select: {
                 name: true,
-                role: true
+                role: true,
+                tenantId: true
             }
         });
 
         if (!user) {
-            return NextResponse.json({ error: "Invalid PIN" }, { status: 403 });
+            console.warn(`[POS PIN ERROR] Shop: ${shop_slug}, Method: ${session.user.role}, Attempt: ${pin}`);
+            return NextResponse.json({ error: "PIN ไม่ถูกต้อง หรือคุณจำกัดสิทธิ์การใช้งาน" }, { status: 403 });
         }
+
+        console.log(`[POS PIN SUCCESS] User ${user.name} (${user.role}) unlocked terminal for ${shop_slug}`);
 
         return NextResponse.json({
             name: user.name,

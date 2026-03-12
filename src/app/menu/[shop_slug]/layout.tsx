@@ -7,10 +7,12 @@ type Props = {
     params: Promise<{ shop_slug: string }>;
 };
 
-async function getStoreData(slug: string) {
+import { cache } from "react";
+
+const getStoreData = cache(async (slug: string) => {
     try {
         const tenant = await prisma.tenant.findUnique({
-            where: { slug },
+            where: { slug: slug.toLowerCase().trim() },
             select: {
                 id: true,
                 name: true,
@@ -21,9 +23,9 @@ async function getStoreData(slug: string) {
         return tenant;
     } catch (err) {
         console.error("Database connection error in MenuLayout:", err);
-        return null;
+        throw new Error("ระบบขัดข้องชั่วคราว กรุณารองอีกครั้ง (Database Error)");
     }
-}
+});
 
 export async function generateMetadata({ params }: { params: Promise<{ shop_slug: string }> }): Promise<Metadata> {
     const { shop_slug } = await params;
@@ -49,14 +51,29 @@ export default async function MenuLayout({
     params,
 }: Props) {
     const { shop_slug } = await params;
-    const store = await getStoreData(shop_slug);
+    let store = null;
+    try {
+        store = await getStoreData(shop_slug);
+    } catch (err: any) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-red-50 px-6">
+                <div className="text-center">
+                    <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <h1 className="text-xl font-black text-gray-900 mb-2">เกิดข้อผิดพลาดในการโหลดข้อมูล</h1>
+                    <p className="text-gray-500 font-medium text-sm">{err.message || "กรุณาลองใหม่อีกครั้งในภายหลัง"}</p>
+                    <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-gray-900 text-white rounded-xl text-sm font-bold">ลองใหม่อีกครั้ง</button>
+                </div>
+            </div>
+        );
+    }
 
     if (!store) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 px-6">
                 <div className="text-center">
                     <h1 className="text-2xl font-black text-gray-900 mb-2">ไม่พบร้านค้า</h1>
-                    <p className="text-gray-500 font-medium">กรุณาตรวจสอบ URL อีกครั้ง</p>
+                    <p className="text-gray-500 font-medium">กรุณาตรวจสอบ URL อีกครั้ง (slug: {shop_slug})</p>
+                    <a href="/" className="mt-6 inline-block text-brand-orange font-bold text-sm">กลับหน้าหลัก</a>
                 </div>
             </div>
         );
