@@ -35,12 +35,12 @@ export default function RegisterPage() {
     const isQuotaFull = freeStoresCount >= MAX_FREE_STORES;
     const canRegisterFree = isFreeTrialActive && !isQuotaFull;
 
-    // Default to 'pro' if free is not available
+    // Default to 'pro' if free is not available, but only if no plan selected yet
     React.useEffect(() => {
-        if (!canRegisterFree) {
-            setFormData(prev => ({ ...prev, plan: 'pro', isTrial: false }));
+        if (!canRegisterFree && formData.plan === 'pro') {
+            setFormData(prev => ({ ...prev, isTrial: false }));
         }
-    }, [canRegisterFree]);
+    }, [canRegisterFree, formData.plan]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState("");
@@ -564,7 +564,9 @@ export default function RegisterPage() {
                                         <div className="space-y-3">
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-gray-500 font-bold">แพ็กเกจ:</span>
-                                                <span className="text-gray-900 font-black uppercase">{formData.plan} {formData.isTrial ? "(Trial)" : ""}</span>
+                                                <span className="text-gray-900 font-black uppercase">
+                                                    {formData.plan === 'pos' ? '🔥 Tamjai POS' : '💎 Tamjai PRO'} {formData.isTrial ? "(Trial)" : ""}
+                                                </span>
                                             </div>
                                             <div className="flex justify-between items-center text-sm">
                                                 <span className="text-gray-500 font-bold">ราคาแพ็กเกจ:</span>

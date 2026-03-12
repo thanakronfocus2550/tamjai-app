@@ -109,13 +109,13 @@ export default function StoreAdminLayout({
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="font-bold text-gray-900 leading-none text-sm">{storeName}</h1>
-                            <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${userPlan === 'POS'
-                                ? 'bg-purple-50 text-purple-600 border-purple-100'
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm ${userPlan === 'POS'
+                                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400'
                                 : userPlan === 'PRO'
-                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                    : 'bg-gray-50 text-gray-500 border-gray-100'
+                                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400'
+                                    : 'bg-gray-100 text-gray-500 border-gray-200'
                                 }`}>
-                                {userPlan} Plan
+                                {userPlan === 'POS' ? '🚀 POS Ultra' : userPlan === 'PRO' ? '💎 PRO Member' : 'FREE Trial'}
                             </span>
                             {isSuspended && (
                                 <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-100 animate-pulse">

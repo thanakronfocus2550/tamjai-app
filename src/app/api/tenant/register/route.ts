@@ -121,13 +121,13 @@ export async function POST(req: Request) {
                         name: shopName,
                         slug: shopSlug,
                         phone, // Save the phone number
-                        plan: plan.toUpperCase(),
+                        plan: plan.toUpperCase() as any,
                         refCode, // Save the generated code
                         isActive: isTrial ? true : false, // Auto-active if trial
                         addBefriendService: addBefriendService || false,
                         trialEndsAt: isTrial ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null,
                         themeConfig: {
-                            primaryColor: "#FF6B00",
+                            primaryColor: plan.toLowerCase() === 'pos' ? "#7C3AED" : "#FF6B00", // Purple for POS, Orange for others
                         },
                     } as any
                 }

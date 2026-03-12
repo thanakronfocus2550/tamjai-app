@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
                 data: {
                     name,
                     slug,
-                    plan: plan || "FREE",
-                    themeColor: "#FF6B00",
+                    plan: (plan || "FREE").toUpperCase() as any,
+                    themeColor: (plan || "").toUpperCase() === "POS" ? "#7C3AED" : "#FF6B00",
                 }
             });
 
