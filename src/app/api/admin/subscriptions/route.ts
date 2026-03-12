@@ -46,14 +46,21 @@ export async function GET(request: NextRequest) {
 
         const formattedSubscriptions = tenants.map(t => {
             const sub = t.subscriptions[0];
-            const daysLeft = sub ? Math.ceil((new Date(sub.endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+            let daysLeft = sub ? Math.ceil((new Date(sub.endDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+            let expiryDate = sub ? new Date(sub.endDate) : null;
+
+            // If FREE trial and no sub record, estimate from joining date
+            if (!sub && t.plan === "FREE") {
+                expiryDate = new Date(new Date(t.createdAt).getTime() + 7 * 24 * 60 * 60 * 1000);
+                daysLeft = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            }
 
             let status = t.isActive ? "Active" : "Inactive";
-            if (sub && daysLeft <= 0) status = "Expired";
-            else if (sub && daysLeft <= 7) status = "Expiring Soon";
+            if (expiryDate && daysLeft <= 0) status = "Expired";
+            else if (expiryDate && daysLeft <= 7) status = "Expiring Soon";
 
             return {
-                id: sub?.id || `SUB-${t.id.toUpperCase()}`,
+                id: sub?.id || `SUB-${t.id.toUpperCase().slice(-6)}`,
                 store: t.name,
                 owner: t.users[0]?.name || "N/A",
                 plan: t.plan || "FREE",

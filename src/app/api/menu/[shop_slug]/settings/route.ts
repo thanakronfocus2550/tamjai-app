@@ -17,6 +17,7 @@ export async function GET(
                 id: true,
                 name: true,
                 slug: true,
+                plan: true,
                 phone: true,
                 address: true,
                 openTime: true,
@@ -27,6 +28,8 @@ export async function GET(
                 bankAccount: true,
                 deliveryEnabled: true,
                 pickupEnabled: true,
+                // @ts-ignore
+                deliveryFee: true,
                 themeColor: true,
                 logoUrl: true,
                 bannerUrl: true,

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Store, User, Mail, Phone, Globe, CheckCircle2, ChevronRight, Lock, AlertCircle, XCircle } from "lucide-react";
+import { ArrowRight, Store, User, Mail, Phone, Globe, CheckCircle2, ChevronRight, Lock, AlertCircle, XCircle, Bike, Check, LayoutGrid } from "lucide-react";
 import LegalConsentCheckbox from "@/components/LegalConsentCheckbox";
 
 export default function RegisterPage() {
@@ -15,9 +15,12 @@ export default function RegisterPage() {
         email: "",
         phone: "",
         password: "",
+        confirmPassword: "",
         subdomain: "",
         plan: "free" as "free" | "pro" | "pos",
+        isTrial: true, // Default to trial for now
         couponCode: "",
+        addBefriendService: false, // New service option
         extra_info: "", // Honeypot field
     });
 
@@ -91,9 +94,9 @@ export default function RegisterPage() {
         }
         if (!formData.fullName) errors.fullName = "กรุณากรอกชื่อ-นามสกุล";
 
-        // Phone: Numeric only, 9-10 digits
-        if (!/^[0-9]{9,10}$/.test(formData.phone)) {
-            errors.phone = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 9-10 หลัก";
+        // Phone: Numeric only, 10 digits exactly
+        if (!/^[0-9]{10}$/.test(formData.phone)) {
+            errors.phone = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก";
         }
 
         // Email: Gmail or Hotmail only
@@ -106,6 +109,11 @@ export default function RegisterPage() {
         const passwordRegex = /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/;
         if (!passwordRegex.test(formData.password)) {
             errors.password = "รหัสผ่านต้องเป็นภาษาอังกฤษ 8 ตัวขึ้นไป";
+        }
+
+        // Confirm Password check
+        if (formData.password !== formData.confirmPassword) {
+            errors.confirmPassword = "รหัสผ่านไม่ตรงกัน";
         }
 
         setFieldErrors(errors);
@@ -134,7 +142,9 @@ export default function RegisterPage() {
                     password: formData.password,
                     couponCode: formData.couponCode,
                     plan: formData.plan,
-                    slipBase64: formData.plan === 'pro' ? slipBase64 : undefined,
+                    addBefriendService: formData.addBefriendService,
+                    isTrial: formData.isTrial,
+                    slipBase64: (formData.plan === 'pro' || formData.plan === 'pos') && !formData.isTrial ? slipBase64 : undefined,
                     extra_info: formData.extra_info, // Honeypot data
                 }),
             });
@@ -196,7 +206,7 @@ export default function RegisterPage() {
                             {step === 1 && "กรอกข้อมูลพื้นฐานเพื่อสร้างหน้าร้านออนไลน์ของคุณ"}
                             {step === 2 && "ตั้งชื่อลิ้งค์ที่ลูกค้าจะใช้เข้ามาสั่งอาหาร (เปลี่ยนได้ภายหลัง)"}
                             {step === 3 && "เริ่มทดลองใช้ฟรี 7 วัน หรือเลือกสมัครแพ็กเกจ Pro ทันที"}
-                            {step === 4 && (formData.plan === 'free' ? "รอสักครู่ ระบบกำลังเตรียมหน้าร้านให้คุณ โดยไม่ต้องตรวจสอบสลิปยืนยัน" : "กรุณารอผู้ดูแลระบบตรวจสอบข้อมูลและสลิปการโอนเงิน")}
+                            {step === 4 && (formData.isTrial ? "รอสักครู่ ระบบกำลังเตรียมหน้าร้านให้คุณ โดยไม่ต้องตรวจสอบสลิปยืนยัน" : "กรุณารอผู้ดูแลระบบตรวจสอบข้อมูลและสลิปการโอนเงิน")}
                         </p>
                     </div>
 
@@ -319,6 +329,21 @@ export default function RegisterPage() {
                                             </div>
                                             {fieldErrors.password && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{fieldErrors.password}</p>}
                                         </div>
+
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1.5">ยืนยันรหัสผ่าน <span className="text-brand-orange">*</span></label>
+                                            <div className="relative">
+                                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                                <input
+                                                    type="password"
+                                                    placeholder="กรอกรหัสผ่านอีกครั้ง"
+                                                    value={formData.confirmPassword}
+                                                    onChange={(e) => updateForm("confirmPassword", e.target.value)}
+                                                    className={`w-full rounded-2xl border ${fieldErrors.confirmPassword ? 'border-red-500 bg-red-50/10' : 'border-gray-200 bg-white/50'} py-3 pl-11 pr-4 text-sm font-medium text-gray-900 transition-all focus:border-brand-orange focus:bg-white focus:ring-4 focus:ring-orange-50 outline-none`}
+                                                />
+                                            </div>
+                                            {fieldErrors.confirmPassword && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{fieldErrors.confirmPassword}</p>}
+                                        </div>
                                     </div>
 
                                     <button
@@ -427,8 +452,28 @@ export default function RegisterPage() {
                                     </div>
 
                                     {/* Plan Selection */}
-                                    <div className="space-y-3">
-                                        <p className="font-bold text-gray-900 text-sm pl-1">เลือกแพ็กเกจเริ่มต้น <span className="text-brand-orange">*</span></p>
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <p className="font-bold text-gray-900 text-sm pl-1">เลือกแพ็กเกจเริ่มต้น <span className="text-brand-orange">*</span></p>
+
+                                            {/* Trial/Paid Toggle */}
+                                            <div className="flex bg-gray-100 p-1 rounded-xl">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateForm('isTrial', true as any)}
+                                                    className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all ${formData.isTrial ? 'bg-white text-brand-orange shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                                >
+                                                    ทดลองฟรี 7 วัน
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateForm('isTrial', false as any)}
+                                                    className={`px-3 py-1 text-[10px] font-black rounded-lg transition-all ${!formData.isTrial ? 'bg-white text-brand-orange shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                                                >
+                                                    สมัครใช้งานทันที
+                                                </button>
+                                            </div>
+                                        </div>
 
                                         <label className={`block relative p-4 rounded-2xl border-2 transition-all ${!canRegisterFree ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50' : formData.plan === 'free' ? 'border-brand-orange bg-orange-50/50 cursor-pointer' : 'border-gray-200 bg-white hover:border-brand-orange/30 cursor-pointer'}`}>
                                             <input
@@ -455,7 +500,7 @@ export default function RegisterPage() {
                                             </div>
                                             {!canRegisterFree && (
                                                 <div className="mt-2 flex items-center gap-1.5 text-[10px] font-black uppercase text-red-500">
-                                                    <XCircle className="h-3 w-3" /> Unavailable
+                                                    <XCircle className="h-3 w-3" /> ไม่พร้อมใช้งาน
                                                 </div>
                                             )}
                                         </label>
@@ -472,20 +517,26 @@ export default function RegisterPage() {
                                             </div>
                                         )}
 
-                                        <label className={`block relative p-4 rounded-2xl border-2 transition-all cursor-pointer ${formData.plan === 'pro' ? 'border-brand-orange bg-orange-50/50' : 'border-gray-200 bg-white hover:border-brand-orange/30'}`}>
+                                        <label className={`block relative p-5 rounded-[2rem] border-2 transition-all cursor-pointer ${formData.plan === 'pro' ? 'border-brand-orange bg-orange-50/50 shadow-xl shadow-orange-100' : 'border-gray-200 bg-white hover:border-brand-orange/30'}`}>
                                             <input type="radio" name="plan" value="pro" checked={formData.plan === 'pro'} onChange={() => updateForm('plan', 'pro')} className="absolute opacity-0" />
                                             <div className="flex items-start justify-between">
-                                                <div>
-                                                    <p className="font-black text-gray-900">Tamjai Pro (450฿/เดือน)</p>
-                                                    <p className="text-xs font-medium text-gray-500 mt-1">สมัครและแนบสลิปทันทีเพื่อใช้งานไม่สะดุด</p>
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors ${formData.plan === 'pro' ? 'bg-brand-orange text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                                        <Bike className="h-6 w-6" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-black text-gray-900 text-lg">Tamjai Pro</p>
+                                                        <p className="text-xs font-black text-brand-orange mt-0.5 tracking-wider uppercase">450฿ / เดือน</p>
+                                                        <p className="text-[10px] font-bold text-gray-400 mt-1">เน้นจัดส่งและรับกลับบ้าน (Delivery & Pickup)</p>
+                                                    </div>
                                                 </div>
-                                                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${formData.plan === 'pro' ? 'border-brand-orange bg-brand-orange' : 'border-gray-200 bg-white'}`}>
-                                                    {formData.plan === 'pro' && <div className="h-2 w-2 rounded-full bg-white"></div>}
+                                                <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${formData.plan === 'pro' ? 'border-brand-orange bg-brand-orange scale-110 shadow-lg' : 'border-gray-200 bg-white'}`}>
+                                                    {formData.plan === 'pro' && <Check className="h-4 w-4 text-white" strokeWidth={4} />}
                                                 </div>
                                             </div>
 
-                                            {/* Dummy Slip Upload (Only when 'pro' is selected) */}
-                                            {formData.plan === 'pro' && (
+                                            {/* Pro Slip Upload (Only when 'pro' is selected AND NOT TRIAL) */}
+                                            {formData.plan === 'pro' && !formData.isTrial && (
                                                 <div className="mt-4 pt-4 border-t border-brand-orange/20 space-y-4">
                                                     <div className="bg-white rounded-xl p-4 border border-orange-100 shadow-sm">
                                                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">ช่องทางชำระเงิน</p>
@@ -498,7 +549,7 @@ export default function RegisterPage() {
                                                         </div>
                                                         <div className="mt-3 p-2 bg-orange-50 rounded-lg text-center">
                                                             <p className="text-[10px] font-bold text-brand-orange uppercase">
-                                                                ยอดโอน: {formData.couponCode === 'TAMJAI100' ? '350.00' : '450.00'} บาท
+                                                                ยอดโอน: {((formData.couponCode === 'TAMJAI100' ? 350 : 450) + (formData.addBefriendService ? 100 : 0)).toFixed(2)} บาท
                                                             </p>
                                                             {formData.couponCode === 'TAMJAI100' && (
                                                                 <p className="text-[9px] text-emerald-600 font-bold mt-0.5">(ส่วนลดจากโค้ด -100฿)</p>
@@ -529,23 +580,29 @@ export default function RegisterPage() {
                                             )}
                                         </label>
 
-                                        <label className={`block relative p-4 rounded-2xl border-2 transition-all cursor-pointer ${formData.plan === 'pos' ? 'border-brand-orange bg-orange-50/50' : 'border-gray-200 bg-white hover:border-brand-orange/30'}`}>
+                                        <label className={`block relative p-5 rounded-[2rem] border-2 transition-all cursor-pointer ${formData.plan === 'pos' ? 'border-brand-orange bg-orange-50/50 shadow-xl shadow-orange-100' : 'border-gray-200 bg-white hover:border-brand-orange/30'}`}>
                                             <input type="radio" name="plan" value="pos" checked={formData.plan === 'pos'} onChange={() => updateForm('plan', 'pos')} className="absolute opacity-0" />
                                             <div className="flex items-start justify-between">
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-black text-gray-900">Tamjai POS (600฿/เดือน)</p>
-                                                        <span className="bg-brand-orange text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">New</span>
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shadow-lg transition-colors ${formData.plan === 'pos' ? 'bg-brand-orange text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                                        <LayoutGrid className="h-6 w-6" />
                                                     </div>
-                                                    <p className="text-xs font-medium text-gray-500 mt-1">ฟีเจอร์ครบ สำหรับร้านที่มีหน้าร้าน-กินที่โต๊ะ (Dine-in)</p>
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="font-black text-gray-900 text-lg">Tamjai POS</p>
+                                                            <span className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Recommended</span>
+                                                        </div>
+                                                        <p className="text-xs font-black text-brand-orange mt-0.5 tracking-wider uppercase">600฿ / เดือน</p>
+                                                        <p className="text-[10px] font-bold text-gray-400 mt-1">จัดการหน้าร้าน + กินที่ร้าน (Dine-in Terminal)</p>
+                                                    </div>
                                                 </div>
-                                                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${formData.plan === 'pos' ? 'border-brand-orange bg-brand-orange' : 'border-gray-200 bg-white'}`}>
-                                                    {formData.plan === 'pos' && <div className="h-2 w-2 rounded-full bg-white"></div>}
+                                                <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${formData.plan === 'pos' ? 'border-brand-orange bg-brand-orange scale-110 shadow-lg' : 'border-gray-200 bg-white'}`}>
+                                                    {formData.plan === 'pos' && <Check className="h-4 w-4 text-white" strokeWidth={4} />}
                                                 </div>
                                             </div>
 
-                                            {/* POS Slip Upload */}
-                                            {formData.plan === 'pos' && (
+                                            {/* POS Slip Upload (Only when NOT TRIAL) */}
+                                            {formData.plan === 'pos' && !formData.isTrial && (
                                                 <div className="mt-4 pt-4 border-t border-brand-orange/20 space-y-4">
                                                     <div className="bg-white rounded-xl p-4 border border-orange-100 shadow-sm">
                                                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">ช่องทางชำระเงิน</p>
@@ -558,7 +615,7 @@ export default function RegisterPage() {
                                                         </div>
                                                         <div className="mt-3 p-2 bg-orange-50 rounded-lg text-center">
                                                             <p className="text-[10px] font-bold text-brand-orange uppercase">
-                                                                ยอดโอน: 600.00 บาท
+                                                                ยอดโอน: {(600 + (formData.addBefriendService ? 100 : 0)).toFixed(2)} บาท
                                                             </p>
                                                         </div>
                                                     </div>
@@ -598,6 +655,25 @@ export default function RegisterPage() {
                                                     className="w-full rounded-2xl border border-gray-200 bg-white py-3 px-4 text-sm font-bold text-gray-900 transition-all focus:border-brand-orange focus:ring-4 focus:ring-orange-50 outline-none uppercase tracking-widest"
                                                 />
                                             </div>
+                                        </div>
+
+                                        {/* Befriend Service Option */}
+                                        <div className="pt-2">
+                                            <label className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer ${formData.addBefriendService ? 'border-emerald-500 bg-emerald-50/30' : 'border-gray-200 bg-white hover:border-emerald-200'}`}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.addBefriendService}
+                                                    onChange={(e) => updateForm("addBefriendService", e.target.checked as any)}
+                                                    className="h-5 w-5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="flex items-center justify-between">
+                                                        <p className="font-bold text-gray-900 text-sm">Befriend Service (+100฿)</p>
+                                                        <span className="text-[10px] font-black uppercase text-emerald-600">Recommended</span>
+                                                    </div>
+                                                    <p className="text-[10px] text-gray-500 font-medium leading-tight mt-0.5">ให้เจ้าหน้าที่ช่วยตั้งค่าและเพิ่มเมนูอาหารให้คุณ (สูงสุด 20 เมนู)</p>
+                                                </div>
+                                            </label>
                                         </div>
                                     </div>
 
@@ -749,7 +825,7 @@ export default function RegisterPage() {
                         <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600"></div>
                         <div>
                             <p className="font-bold text-white text-sm">คุณบอย, สุกี้หม่าล่า</p>
-                            <p className="text-xs font-bold text-gray-500">ใช้งานมาแล้ว 6 เดือน</p>
+                            <p className="text-xs font-bold text-gray-500">ใช้งานมานานกว่า 6 เดือน</p>
                         </div>
                     </div>
                 </motion.div>

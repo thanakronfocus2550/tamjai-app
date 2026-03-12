@@ -2,20 +2,23 @@
 
 import React, { useState, use } from "react";
 import Link from "next/link";
-import { ChevronLeft, Bike, Store, QrCode, Banknote, MapPin, CreditCard } from "lucide-react";
+import { ChevronLeft, Bike, Store, QrCode, Banknote, MapPin, CreditCard, Minus, Plus, Users } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
 // (Mock data removed, now using CartContext)
 
 type PayMethod = "promptpay" | "cash";
-type OrderMode = "delivery" | "pickup";
+type OrderMode = "delivery" | "pickup" | "dinein";
 
 export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: string }> }) {
     const { shop_slug } = use(params);
+    const { cart, cartTotal, clearCart, updateQty } = useCart();
+    const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const tableParam = searchParams?.get("table");
+    const tableNumber = tableParam ? tableParam : null;
     const storeName = shop_slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-    const { cart, cartTotal, clearCart } = useCart();
 
-    const [orderMode, setOrderMode] = useState<OrderMode>("delivery");
+    const [orderMode, setOrderMode] = useState<OrderMode>(tableNumber ? "dinein" : "delivery");
     const [payMethod, setPayMethod] = useState<PayMethod>("promptpay");
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
@@ -27,11 +30,29 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
+    const [tenantSettings, setTenantSettings] = useState<any>(null);
 
     const { addToCart } = useCart();
 
+    // Fetch Tenant Settings
+    React.useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch(`/api/menu/${shop_slug}/settings`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setTenantSettings(data);
+                }
+            } catch (err) {
+                console.error("Failed to fetch settings:", err);
+            }
+        };
+        fetchSettings();
+    }, [shop_slug]);
+
     const subtotal = cartTotal;
-    const deliveryFee = orderMode === "delivery" ? 30 : 0;
+    const baseDeliveryFee = tenantSettings?.deliveryFee !== undefined ? Number(tenantSettings.deliveryFee) : 30;
+    const deliveryFee = orderMode === "delivery" ? baseDeliveryFee : 0;
     const total = Math.max(0, subtotal + deliveryFee - promoDiscount);
     const isFormValid = !!(name.trim() && phone.trim() && (orderMode === "pickup" || address.trim()));
 
@@ -111,6 +132,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                     customer: { name, phone, address },
                     // @ts-ignore
                     orderType: orderMode,
+                    tableNumber: orderMode === "dinein" ? tableNumber : null,
                     total: subtotal + deliveryFee, // Send raw total, server will re-apply promo
                     promoCode: promoDiscount > 0 ? promoCode : undefined
                 }),
@@ -159,8 +181,17 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                         )}
                     </section>
 
-                    {/* Order Mode - Re-enabled Pickup */}
+                    {/* Order Mode - Re-enabled Pickup & Added Dine-in */}
                     <div className="flex bg-gray-100 p-1.5 rounded-2xl gap-1">
+                        {tableNumber && (
+                            <button
+                                type="button"
+                                onClick={() => setOrderMode("dinein")}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${orderMode === "dinein" ? "bg-white text-orange-600 shadow-lg shadow-orange-100/50" : "text-gray-400 hover:text-gray-600"}`}
+                            >
+                                <span className="flex items-center gap-2 italic"><Users className="h-4 w-4" /> โต๊ะ {tableNumber}</span>
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={() => setOrderMode("delivery")}
@@ -208,8 +239,22 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                         <div className="space-y-3 mb-4">
                             {cart.map(item => (
                                 <div key={item.id} className="flex items-start justify-between gap-3">
-                                    <div className="flex gap-2">
-                                        <span className="font-bold text-orange-500 text-sm shrink-0">{item.qty}x</span>
+                                    <div className="flex gap-3">
+                                        <div className="flex flex-col items-center gap-1.5 mt-0.5">
+                                            <button
+                                                onClick={() => updateQty(item.id, item.qty + 1)}
+                                                className="h-6 w-6 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center hover:bg-orange-100 transition-colors"
+                                            >
+                                                <Plus className="h-3 w-3" />
+                                            </button>
+                                            <span className="font-bold text-gray-900 text-xs">{item.qty}</span>
+                                            <button
+                                                onClick={() => updateQty(item.id, item.qty - 1)}
+                                                className="h-6 w-6 rounded-full bg-gray-50 text-gray-400 flex items-center justify-center hover:bg-gray-100 transition-colors"
+                                            >
+                                                <Minus className="h-3 w-3" />
+                                            </button>
+                                        </div>
                                         <div>
                                             <p className="text-sm font-medium text-gray-900">{item.name}</p>
                                             <div className="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-1">

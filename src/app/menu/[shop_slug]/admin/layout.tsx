@@ -3,7 +3,7 @@
 import React, { use } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, UtensilsCrossed, Settings, ExternalLink, ChevronLeft, LogOut } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, Settings, ExternalLink, ChevronLeft, LogOut, QrCode } from "lucide-react";
 import { useSession } from "next-auth/react";
 import FloatingMascot from "@/components/FloatingMascot";
 
@@ -20,14 +20,20 @@ export default function StoreAdminLayout({
     const router = useRouter();
     const { data: session, status } = useSession();
 
+    const userPlan = (session?.user as any)?.plan || "FREE";
+
     React.useEffect(() => {
         if (status === "loading") return;
 
         const isLoginPage = pathname.endsWith('/admin/login');
+        const user = session?.user as any;
 
         if (isLoginPage) {
-            if (status === "authenticated" && (session?.user?.role === "TENANT_ADMIN" || session?.user?.role === "SUPER_ADMIN")) {
-                router.replace(`/menu/${shop_slug}/admin`);
+            if (status === "authenticated") {
+                // If logged in and matches this shop, go to admin dashboard
+                if (user?.shopSlug === shop_slug || user?.role === "SUPER_ADMIN") {
+                    router.replace(`/menu/${shop_slug}/admin`);
+                }
             }
             return;
         }
@@ -35,11 +41,22 @@ export default function StoreAdminLayout({
         if (status === "unauthenticated") {
             router.replace(`/menu/${shop_slug}/admin/login`);
         } else if (status === "authenticated") {
-            if (session?.user?.role !== "TENANT_ADMIN" && session?.user?.role !== "SUPER_ADMIN") {
+            // Check Role and Shop Ownership
+            const isOwner = user?.shopSlug === shop_slug;
+            const isSuper = user?.role === "SUPER_ADMIN";
+
+            if (!isSuper && (user?.role !== "TENANT_ADMIN" || !isOwner)) {
+                console.warn("Access Denied: Not the owner of this shop");
                 router.replace("/");
+                return;
+            }
+
+            // Protection for POS pages
+            if (pathname.includes('/admin/pos') && userPlan !== 'POS') {
+                router.replace(`/menu/${shop_slug}/admin`);
             }
         }
-    }, [status, session, router, pathname, shop_slug]);
+    }, [status, session, router, pathname, shop_slug, userPlan]);
 
     const handleLogout = async () => {
         await fetch("/api/auth/logout", {
@@ -53,6 +70,10 @@ export default function StoreAdminLayout({
     const nav = [
         { href: `/menu/${shop_slug}/admin`, label: "ออเดอร์ Live", icon: LayoutDashboard, exact: true },
         { href: `/menu/${shop_slug}/admin/menu`, label: "จัดการเมนู", icon: UtensilsCrossed },
+        ...(userPlan === 'POS' ? [
+            { href: `/menu/${shop_slug}/admin/pos`, label: "🔥 ระบบ POS", icon: LayoutDashboard },
+            { href: `/menu/${shop_slug}/admin/qr`, label: "จัดการโต๊ะ & QR", icon: QrCode }
+        ] : []),
         { href: `/menu/${shop_slug}/admin/settings`, label: "ตั้งค่าร้าน", icon: Settings },
     ];
 
@@ -73,7 +94,6 @@ export default function StoreAdminLayout({
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
-
             {/* Top Nav */}
             <header className="bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
                 <div className="flex items-center gap-3">
@@ -83,8 +103,13 @@ export default function StoreAdminLayout({
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="font-bold text-gray-900 leading-none text-sm">{storeName}</h1>
-                            <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase tracking-wider border border-emerald-100">
-                                Pro Plan
+                            <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider border ${userPlan === 'POS'
+                                ? 'bg-purple-50 text-purple-600 border-purple-100'
+                                : userPlan === 'PRO'
+                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                    : 'bg-gray-50 text-gray-500 border-gray-100'
+                                }`}>
+                                {userPlan} Plan
                             </span>
                         </div>
                         <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider flex items-center gap-1">
@@ -93,6 +118,14 @@ export default function StoreAdminLayout({
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {userPlan === 'POS' && (
+                        <Link
+                            href={`/menu/${shop_slug}/admin/pos`}
+                            className="hidden sm:flex items-center gap-1.5 text-xs font-black text-white bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2 rounded-xl shadow-lg shadow-purple-200 hover:shadow-purple-300 transition-all hover:-translate-y-0.5"
+                        >
+                            🔥 ระบบ POS หน้าร้าน
+                        </Link>
+                    )}
                     <Link
                         href={`/menu/${shop_slug}`}
                         target="_blank"

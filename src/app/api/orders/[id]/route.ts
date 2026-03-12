@@ -33,15 +33,15 @@ export async function PATCH(
         }
 
         const body = await request.json();
-        const { status } = body;
-
-        if (!status) {
-            return NextResponse.json({ error: "Missing status" }, { status: 400 });
-        }
+        const { status, tableNumber } = body;
 
         const order = await prisma.order.update({
             where: { id: currentOrder.id }, // Use the absolute id we found
-            data: { status }
+            data: {
+                ...(status ? { status } : {}),
+                // @ts-ignore
+                ...(tableNumber ? { tableNumber: tableNumber.toString() } : {})
+            }
         });
 
         return NextResponse.json(order, { status: 200 });

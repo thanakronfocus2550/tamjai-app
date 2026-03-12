@@ -34,13 +34,15 @@ export async function POST(req: Request) {
         const {
             fullName: name,
             shopName,
-            subdomain: shopSlug,
+            shopSlug,
             email,
             phone,
             password,
             plan,
             slipBase64,
-            couponCode
+            couponCode,
+            addBefriendService,
+            isTrial
         } = validation.data;
 
         // Check if phone already exists
@@ -107,7 +109,9 @@ export async function POST(req: Request) {
                         phone, // Save the phone number
                         plan: plan.toUpperCase(),
                         refCode, // Save the generated code
-                        isActive: false, // Require Superadmin approval for 7-day free trial
+                        isActive: isTrial ? true : false, // Auto-active if trial
+                        addBefriendService: addBefriendService || false,
+                        trialEndsAt: isTrial ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : null,
                         themeConfig: {
                             primaryColor: "#FF6B00",
                         },
@@ -119,8 +123,8 @@ export async function POST(req: Request) {
 
         const tenant = user.tenant!;
 
-        // Handle slip upload for PRO or POS plan
-        if ((plan === 'pro' || plan === 'pos') && slipBase64) {
+        // Handle slip upload for PRO or POS plan (unless it's a trial)
+        if ((plan === 'pro' || plan === 'pos') && !isTrial && slipBase64) {
             try {
                 // Extract base64 data
                 const matches = slipBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
@@ -153,7 +157,7 @@ export async function POST(req: Request) {
                             refId: `PAY-${Date.now()}`,
                             tenantId: tenant.id,
                             plan: plan.toUpperCase(),
-                            amount: plan === 'pos' ? 600 : (couponCode === 'TAMJAI100' ? 350 : 450),
+                            amount: (plan === 'pos' ? 600 : (couponCode === 'TAMJAI100' ? 350 : 450)) + (addBefriendService ? 100 : 0),
                             bank: `โอนเข้าแพลตฟอร์ม`,
                             status: 'PENDING',
                             slipUrl: fileUrl, // Might be null on Vercel, but record is created

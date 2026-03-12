@@ -46,6 +46,8 @@ export default function TenantsPage() {
 
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [viewingTenant, setViewingTenant] = useState<any>(null);
+    const [rejectionTarget, setRejectionTarget] = useState<any>(null);
+    const [rejectionReason, setRejectionReason] = useState("");
 
     useEffect(() => {
         fetchTenants();
@@ -200,6 +202,31 @@ export default function TenantsPage() {
             }
         } catch (err) {
             alert("Failed to delete tenant");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleReject = async () => {
+        if (!rejectionTarget) return;
+
+        setIsSubmitting(true);
+        try {
+            const res = await fetch(`/api/admin/tenants/${rejectionTarget.id}`, {
+                method: "DELETE"
+            });
+
+            if (res.ok) {
+                alert(`ปฏิเสธการลงทะเบียนร้าน ${rejectionTarget.name} แล้ว (เหตุผล: ${rejectionReason || 'ไม่ระบุ'})`);
+                setRejectionTarget(null);
+                setRejectionReason("");
+                fetchTenants();
+            } else {
+                const err = await res.json();
+                alert("เกิดข้อผิดพลาด: " + err.error);
+            }
+        } catch (err) {
+            alert("Failed to reject tenant");
         } finally {
             setIsSubmitting(false);
         }
@@ -384,13 +411,22 @@ export default function TenantsPage() {
                                                 ดูข้อมูล
                                             </button>
                                             {t.status === 'Inactive' && (
-                                                <button
-                                                    onClick={() => handleApprove(t)}
-                                                    disabled={isSubmitting}
-                                                    className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95 disabled:opacity-50"
-                                                >
-                                                    Approve
-                                                </button>
+                                                <>
+                                                    <button
+                                                        onClick={() => handleApprove(t)}
+                                                        disabled={isSubmitting}
+                                                        className="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setRejectionTarget(t)}
+                                                        disabled={isSubmitting}
+                                                        className="px-3 py-1.5 rounded-xl bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-all text-[10px] font-black uppercase shadow-sm active:scale-95 disabled:opacity-50"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </>
                                             )}
                                             <button
                                                 onClick={() => handleEditClick(t)}
@@ -708,6 +744,67 @@ export default function TenantsPage() {
                                         className="flex-[2] rounded-2xl bg-gray-900 py-4 text-sm font-black uppercase text-white hover:bg-black transition-all shadow-lg shadow-gray-200 disabled:opacity-50 disabled:cursor-not-allowed font-inter"
                                     >
                                         {isSubmitting ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {rejectionTarget && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setRejectionTarget(null)}
+                            className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-md overflow-hidden rounded-[2.5rem] bg-white shadow-2xl"
+                        >
+                            <div className="p-8">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h3 className="text-2xl font-black text-gray-900">ปฏิเสธการลงทะเบียน</h3>
+                                    <button
+                                        onClick={() => setRejectionTarget(null)}
+                                        className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                                    >
+                                        <X className="h-6 w-6 text-gray-400" />
+                                    </button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <p className="text-sm font-bold text-gray-500">
+                                        ยืนยันการปฏิเสธการลงทะเบียนของร้าน <span className="text-gray-900">{rejectionTarget.name}</span>?
+                                    </p>
+                                    <div>
+                                        <label className="block text-xs font-black uppercase text-gray-400 mb-1.5 ml-1">เหตุผลในการปฏิเสธ (Optional)</label>
+                                        <textarea
+                                            placeholder="เช่น เอกสารไม่ครบถ้วน, ข้อมูลไม่ถูกต้อง..."
+                                            value={rejectionReason}
+                                            onChange={(e) => setRejectionReason(e.target.value)}
+                                            className="w-full h-32 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-200 focus:bg-white transition-all underline-none resize-none"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 flex gap-4">
+                                    <button
+                                        onClick={() => setRejectionTarget(null)}
+                                        className="flex-1 rounded-2xl border border-gray-200 py-4 text-sm font-black text-gray-500 hover:bg-gray-50 transition-all font-inter"
+                                    >
+                                        ยกเลิก
+                                    </button>
+                                    <button
+                                        onClick={handleReject}
+                                        disabled={isSubmitting}
+                                        className="flex-1 rounded-2xl bg-red-500 py-4 text-sm font-black text-white hover:bg-red-600 transition-all font-inter shadow-lg shadow-red-500/30 disabled:opacity-50"
+                                    >
+                                        {isSubmitting ? "กำลังดำเนินรายการ..." : "ยืนยันการปฏิเสธ"}
                                     </button>
                                 </div>
                             </div>

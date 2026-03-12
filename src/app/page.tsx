@@ -26,6 +26,7 @@ import {
   CircleDollarSign,
   Flame,
   Zap,
+  Laptop,
   BarChart3,
   HelpCircle,
   Minus,
@@ -461,6 +462,7 @@ export default function Home() {
           <Link href="/contact" className="text-sm font-bold text-gray-500 hover:text-brand-orange transition-colors" onClick={() => setIsMobileMenuOpen(false)}>Contact</Link>
           <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto mt-4 md:mt-0 pt-4 md:pt-0 border-t md:border-t-0 border-gray-100 items-center">
             <Link href="/track" className="flex items-center justify-center text-xs font-bold text-gray-400 hover:text-brand-orange transition-colors">เช็คสถานะ / ต่ออายุ</Link>
+            <Link href="/login" className="px-4 py-2 text-sm font-bold text-gray-700 hover:text-brand-orange transition-colors">เข้าสู่ระบบ</Link>
             <Link
               href="/register"
               className="group relative inline-flex w-full md:w-auto items-center justify-center overflow-hidden rounded-full bg-brand-orange px-6 py-2.5 font-bold text-white shadow-xl shadow-orange-500/20 transition-transform hover:-translate-y-0.5 hover:shadow-orange-500/40 active:scale-95 border border-orange-500"
@@ -636,133 +638,160 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Demo Section (New Section 2) */}
-        <section id="demo" className="py-24 bg-[#FAFAFA] relative overflow-hidden border-y border-gray-100">
+        {/* Product Ecosystem Section */}
+        <section id="solutions" className="py-24 lg:py-32 bg-white relative overflow-hidden border-y border-gray-100 scroll-mt-20">
           <div className="absolute top-0 right-0 w-[50%] h-full bg-orange-500/5 blur-[120px] -z-10 rounded-l-full translate-x-1/2"></div>
 
           <div className="mx-auto max-w-7xl px-6 md:px-12">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="text-center max-w-3xl mx-auto mb-20">
+              <motion.div variants={fadeIn} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+                <div className="mb-4 inline-flex items-center gap-2 text-brand-orange font-black text-sm uppercase tracking-widest">
+                  The Ecosystem
+                </div>
+                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-6 tracking-tight">
+                  One Platform. <span className="text-brand-orange">Two Powerful</span> Worlds.
+                </h2>
+                <p className="text-lg text-gray-500">
+                  เลือกเครื่องมือที่ใช่สำหรับรูปแบบธุรกิจของคุณ หรือใช้ร่วมกันเพื่อประสิทธิภาพสูงสุด
+                </p>
+              </motion.div>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-8">
+              {/* Product 1: Tamjai Pro */}
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                className="order-2 lg:order-1"
+                className="group relative bg-white rounded-[3rem] p-8 md:p-12 border border-gray-100 shadow-xl hover:shadow-2xl transition-all overflow-hidden"
               >
-                <div className="mb-6 inline-flex items-center gap-2 text-brand-orange font-black text-sm uppercase tracking-widest px-4 py-1.5 bg-orange-50 rounded-full border border-orange-100">
-                  <Smartphone className="h-4 w-4" /> Live Storefront Demo
-                </div>
-                <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-6 tracking-tight leading-[1.1]">
-                  Experience the <span className="text-brand-orange">Premium</span> Mobile UX
-                </h2>
-                <p className="text-lg text-gray-500 mb-8 leading-relaxed">
-                  นี่คือหน้าตาที่ลูกค้าของคุณจะเห็น เมื่อสแกน QR Code ที่โต๊ะ ระบบถูกออกแบบมาให้ลื่นไหลเหมือนแอป Native แต่เข้าถึงได้ทันทีผ่านเบราว์เซอร์
-                </p>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-bl-full -z-0 opacity-50"></div>
 
-                <div className="space-y-4 mb-10">
-                  {[
-                    "Smooth Category Navigation",
-                    "Beautiful Product Modals",
-                    "One-Tap Checkout Process",
-                    "Instant Order Confirmation"
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="h-6 w-6 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center">
-                        <Check className="h-3.5 w-3.5" />
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="inline-flex items-center gap-2 text-brand-orange font-black text-xs uppercase tracking-[0.2em] mb-6">
+                    <Globe className="h-4 w-4" /> Web-Based Direct
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-black text-gray-900 mb-4">Tamjai <span className="text-brand-orange">Pro</span></h3>
+                  <p className="text-gray-500 font-medium mb-8 leading-relaxed">
+                    ระบบสั่งอาหารออนไลน์ผ่าน QR Code สำหรับลูกค้า เหมาะสำหรับร้านที่เน้น Delivery, Takeaway หรือสั่งทานที่โต๊ะแบบ Staff-less
+                  </p>
+
+                  <div className="space-y-4 mb-10 flex-1">
+                    {[
+                      "No App Install Required",
+                      "Instant Online Payments",
+                      "LINE Smart Notifications",
+                      "SEO Optimized Storefront"
+                    ].map((f, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                        <span className="font-bold text-sm text-gray-700">{f}</span>
                       </div>
-                      <span className="font-bold text-gray-700">{item}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <div className="flex flex-wrap gap-4 items-center mb-8">
-                  <Link
-                    href="/menu/demo-shop"
-                    target="_blank"
-                    className="inline-flex items-center gap-2 rounded-full bg-gray-900 px-8 py-4 text-white font-bold hover:bg-black transition-all hover:-translate-y-1 shadow-lg"
-                  >
-                    🛒 ลองดูหน้าร้านลูกค้า <ArrowRight className="h-4 w-4" />
-                  </Link>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Link href="/menu/demo-shop" target="_blank" className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-900 px-8 py-4 text-white font-black uppercase tracking-widest text-sm hover:bg-black transition-all shadow-lg hover:-translate-y-1">
+                      Live Storefront Demo <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </div>
               </motion.div>
 
-              <div className="order-1 lg:order-2 relative flex justify-center">
-                {/* Mobile UI Mockup Showcase */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, rotate: -2 }}
-                  whileInView={{ opacity: 1, scale: 1, rotate: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.8, type: "spring" }}
-                  className="relative z-10 mx-auto max-w-[320px]"
-                >
-                  <div className="relative rounded-[3rem] bg-gray-900 p-4 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)] ring-1 ring-gray-900/10">
-                    <div className="overflow-hidden rounded-[2rem] bg-white aspect-[9/19.5] relative">
-                      {/* Header */}
-                      <div className="bg-white px-5 py-4 flex items-center justify-between border-b border-gray-50">
-                        <ArrowLeft className="h-5 w-5 text-gray-400" />
-                        <span className="font-bold text-gray-900">Tamjai Restaurant</span>
-                        <Search className="h-5 w-5 text-gray-400" />
-                      </div>
+              {/* Product 2: Orange Terminal */}
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="group relative bg-[#0F1115] rounded-[3rem] p-8 md:p-12 border border-white/5 shadow-2xl hover:shadow-orange-500/10 transition-all overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-bl-full -z-0 blur-3xl opacity-50 group-hover:opacity-100 transition-opacity"></div>
 
-                      {/* Banner */}
-                      <div className="h-32 bg-gray-100 m-3 rounded-2xl relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                        <div className="absolute bottom-3 left-3 flex gap-1">
-                          {[1, 2, 3].map(i => <div key={i} className={`h-1 w-4 rounded-full ${i === 1 ? 'bg-white' : 'bg-white/40'}`}></div>)}
-                        </div>
-                      </div>
+                <div className="relative z-10 flex flex-col h-full">
+                  <div className="inline-flex items-center gap-2 text-orange-500 font-black text-xs uppercase tracking-[0.2em] mb-6">
+                    <LayoutPanelTop className="h-4 w-4" /> Professional POS
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-black text-white mb-4">Orange <span className="text-orange-500">Terminal</span></h3>
+                  <p className="text-gray-400 font-medium mb-8 leading-relaxed">
+                    ชุดซอฟต์แวร์ขายหน้าร้านระดับโปร สำหรับพนักงานและแคชเชียร์ เน้นความเร็ว จัดการผังโต๊ะ และระบบรับเงินสด/PromptPay
+                  </p>
 
-                      {/* Categories */}
-                      <div className="px-4 py-2 flex gap-3 overflow-x-auto no-scrollbar">
-                        {["All", "Popular", "Spicy", "Drinks"].map((cat, i) => (
-                          <div key={i} className={`px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap ${i === 0 ? 'bg-brand-orange text-white' : 'bg-gray-100 text-gray-500'}`}>
-                            {cat}
-                          </div>
-                        ))}
+                  <div className="space-y-4 mb-10 flex-1">
+                    {[
+                      "Advanced Table Management",
+                      "Flash-Speed Checkout",
+                      "Dynamic PromptPay QR",
+                      "Shift & Money Control"
+                    ].map((f, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <Zap className="h-5 w-5 text-orange-500" />
+                        <span className="font-bold text-sm text-gray-300">{f}</span>
                       </div>
+                    ))}
+                  </div>
 
-                      {/* Menu List */}
-                      <div className="p-4 space-y-4">
-                        {[1, 2].map(i => (
-                          <div key={i} className="flex gap-4">
-                            <div className="h-20 w-20 bg-gray-100 rounded-xl shrink-0"></div>
-                            <div className="flex-1 space-y-2 py-1">
-                              <div className="h-4 w-3/4 bg-gray-100 rounded"></div>
-                              <div className="h-3 w-1/2 bg-gray-50 rounded"></div>
-                              <div className="flex justify-between items-center pt-1">
-                                <span className="font-black text-brand-orange">฿120</span>
-                                <div className="h-6 w-6 rounded-lg bg-orange-50 text-brand-orange flex items-center justify-center">
-                                  <span className="font-bold">+</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Link href="/menu/demo-shop/admin/pos" target="_blank" className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-8 py-4 text-white font-black uppercase tracking-widest text-sm hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 hover:-translate-y-1">
+                      Open POS Demo <ExternalLink className="h-4 w-4" />
+                    </Link>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
 
-                      {/* Bottom Nav / Cart */}
-                      <div className="absolute bottom-0 inset-x-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-100">
-                        <div className="bg-brand-orange rounded-2xl p-4 flex justify-between items-center text-white shadow-lg shadow-orange-200">
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 bg-white/20 rounded-lg flex items-center justify-center">
-                              <ShoppingBag className="h-4 w-4" />
-                            </div>
-                            <div>
-                              <p className="text-[10px] font-bold opacity-80 uppercase leading-none">2 Items</p>
-                              <p className="font-black leading-none mt-1">฿240.00</p>
-                            </div>
-                          </div>
-                          <span className="font-black text-sm">View Cart</span>
-                        </div>
+        {/* Zero Hardware Messaging Section */}
+        <section className="py-24 bg-brand-orange relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+          <div className="mx-auto max-w-7xl px-6 md:px-12 relative z-10">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                className="relative"
+              >
+                <div className="bg-white/10 backdrop-blur-3xl rounded-[3rem] p-4 border border-white/20 shadow-2xl">
+                  <img
+                    src="https://images.unsplash.com/photo-1556742049-3ad443f02164?auto=format&fit=crop&q=80&w=800"
+                    alt="No Hardware Needed"
+                    className="rounded-[2.5rem] w-full h-[400px] object-cover"
+                  />
+                </div>
+                {/* Floating Badge */}
+                <div className="absolute -bottom-6 -right-6 bg-white rounded-3xl p-6 shadow-2xl rotate-3 border border-orange-100">
+                  <p className="text-brand-orange font-black text-2xl leading-none">0.-</p>
+                  <p className="text-gray-500 font-bold text-xs uppercase tracking-widest mt-1">Hardware Cost</p>
+                </div>
+              </motion.div>
+
+              <div className="text-white">
+                <h2 className="text-4xl md:text-5xl font-black mb-8 leading-[1.2] tracking-tight">
+                  "ป้าไม่ต้องซื้อเครื่องใหม่<br />ใช้มือถือป้า หรือแท็บเล็ตเก่าลูกก็ได้"
+                </h2>
+                <p className="text-white/80 text-lg font-medium mb-10 leading-relaxed">
+                  ไม่ต้องจ่ายเงินก้อนซื้อเครื่อง POS ราคาแพง เปลี่ยนทุกหน้าจอที่คุณมีให้เป็นเครื่องมือทำเงินระดับโปร แค่เปิดเว็บเราก็เริ่มขายได้ทันที
+                </p>
+
+                <div className="grid sm:grid-cols-2 gap-6">
+                  {[
+                    { t: "จัดการผังโต๊ะระดับโปร", d: "Advanced Table Management", icon: LayoutPanelTop },
+                    { t: "เช็คบิลไวในพริบตา", d: "Flash-Speed Checkout", icon: Zap },
+                    { t: "พร้อมรับเงินผ่าน PromptPay QR", d: "Dynamic PromptPay QR", icon: QrCode },
+                    { t: "ควบคุมกะและยอดเงินสด", d: "Shift & Money Control", icon: ShieldCheck },
+                    { t: "ไม่ต้องติดตั้งแอปฯ ให้วุ่นวาย", d: "No App Install Required", icon: Smartphone },
+                    { t: "รับเงินออนไลน์ทันใจ", d: "Instant Online Payments", icon: Globe },
+                    { t: "แจ้งเตือนผ่าน LINE ทันที", d: "LINE Smart Notifications", icon: Bell },
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/20 transition-all">
+                      <item.icon className="h-6 w-6 text-white shrink-0 mt-1" />
+                      <div>
+                        <p className="font-bold text-white leading-tight">{item.t}</p>
+                        <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mt-1">{item.d}</p>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-
-                {/* Decorative dots */}
-                <div className="absolute -top-10 -right-10 w-20 h-20 text-brand-orange/20">
-                  <div className="grid grid-cols-5 gap-2">
-                    {[...Array(25)].map((_, i) => <div key={i} className="h-1.5 w-1.5 rounded-full bg-current"></div>)}
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -780,10 +809,10 @@ export default function Home() {
               className="mb-20 md:text-center max-w-3xl mx-auto"
             >
               <motion.div variants={fadeIn} className="mb-4 inline-flex items-center gap-2 text-brand-orange font-black text-sm uppercase tracking-widest">
-                <ShieldCheck className="h-5 w-5" /> Why Tamjai Pro?
+                <ShieldCheck className="h-5 w-5" /> ทำไมต้อง Tamjai Pro?
               </motion.div>
               <motion.h2 variants={fadeIn} className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 mb-6">
-                Total Control.<br className="md:hidden" /> <span className="text-gray-400">Zero Chaos.</span>
+                จัดการครบ.<br className="md:hidden" /> <span className="text-gray-400">จบทุกความวุ่นวาย</span>
               </motion.h2>
               <motion.p variants={fadeIn} className="text-lg text-gray-500">
                 หมดปัญหาออเดอร์มั่ว ลูกค้าบ่นรอนาน เราออกแบบโซลูชัน 6 มิติที่ตอบโจทย์เจ้าของร้านยุคดิจิทัลโดยเฉพาะ
@@ -793,11 +822,10 @@ export default function Home() {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {[
                 { icon: Smartphone, title: "ระบบสั่งอาหารออนไลน์ครบวงจร", desc: "หน้าสั่งอาหารในชื่อแบรนด์ของคุณ ดีไซน์แอปฯ ใช้งานง่าย รองรับทั้ง Delivery, รับที่ร้าน และสั่งล่วงหน้าตลอด 24 ชม." },
-                { icon: QrCode, title: "สั่งอาหารที่โต๊ะง่ายๆ ด้วย QR Code", desc: "ลูกค้าสแกนดูเมนู สั่ง และชำระเงินจบใน 1-2 นาที ลดค่าพิมพ์เมนูกระดาษ และความผิดพลาดในการจดออเดอร์" },
-                { icon: CheckCircle2, title: "จัดการออเดอร์อย่างมืออาชีพ", desc: "Dashboard จัดการทุกคำสั่งซื้อในที่เดียว แจ้งเตือนออเดอร์ใหม่ทันที และพิมพ์ใบสั่งอาหารเข้าครัวอัตโนมัติ" },
+                { icon: QrCode, title: "สั่งอาหารที่โต๊ะด้วย QR Code", desc: "ลูกค้าสแกนดูเมนู สั่ง และชำระเงินจบใน 1-2 นาที ลดค่าพิมพ์เมนูกระดาษ และความผิดพลาดในการจดออเดอร์" },
+                { icon: CheckCircle2, title: "จัดการออเดอร์อย่างมืออาชีพ", desc: "Dashboard จัดการทุกคำสั่งซื้อในที่เดียว แจ้งเตือนออเดอร์ใหม่ทันที และอัปเกรดเป็น KDS Pro จอภาพในครัว" },
                 { icon: Store, title: "รองรับการทำงานหลากหลายรูปแบบ", desc: "แยกอิสระในแต่ละสาขา กำหนดพื้นที่จัดส่งได้เอง และรองรับการสั่งแบบทานที่ร้าน (Table Ordering)" },
-                { icon: TrendingUp, title: "เครื่องมือเพิ่มยอดขายและการตลาด", desc: "เพิ่มตัวเลือกเสริม (Add-ons) ฟังก์ชัน Up-Sell เก็บข้อมูลลูกค้าวิเคราะห์ และสร้างโปรโมชันส่วนลดได้เอง" },
-                { icon: Search, title: "โอกาสในการค้นพบร้านบน Google", desc: "หน้าเพจเป็นมิตรกับ SEO ช่วยให้ลูกค้าค้นหาร้านเจอได้ง่ายขึ้นผ่านประเภทอาหาร ทำเลที่ตั้ง หรือชื่อร้านของคุณโดยตรง" }
+                { icon: Gift, title: "ระบบสมาชิกและโปรโมชั่น", desc: "เพิ่มตัวเลือกเสริม (Add-ons) ฟังก์ชัน Up-Sell เก็บข้อมูลลูกค้าวิเคราะห์ และสร้างโปรโมชันส่วนลดได้เอง" },
               ].map((feature, i) => (
                 <motion.div
                   key={i}
@@ -887,9 +915,9 @@ export default function Home() {
                 <div className="flex flex-col gap-3">
                   {[
                     { id: "dashboard", icon: TrendingUp, t: "Live Dashboard", d: "ดูออเดอร์และยอดขายแบบวินาทีต่อวินาที" },
-                    { id: "kitchen", icon: ChefHat, t: "Kitchen Display (KDS)", d: "ระบบหน้าจอในครัว รับออเดอร์และตัดคิวทันใจ" },
-                    { id: "menu", icon: MenuSquare, t: "Menu Management", d: "จัดหมวดหมู่ เปลี่ยนรูป อัปราคา ทันใจ" },
-                    { id: "config", icon: Settings2, t: "Store Customization", d: "สร้างธีมร้านที่สะท้อนตัวตนคุณ" }
+                    { id: "pos", icon: Laptop, t: "Professional POS", d: "ระบบขายหน้าร้าย จัดการโต๊ะ และรับชำระเงิน" },
+                    { id: "kitchen", icon: ChefHat, t: "KDS Pro", d: "ระบบหน้าจอในครัว รับออเดอร์และตัดคิวทันใจ" },
+                    { id: "menu", icon: MenuSquare, t: "Menu & Inventory", d: "จัดหมวดหมู่ อัปราคา และตัดสต๊อกอัตโนมัติ" }
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -972,6 +1000,40 @@ export default function Home() {
                                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-white text-gray-900 text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
                                   ฿{h * 100}
                                 </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'pos' && (
+                      <div className="flex-1 flex flex-col gap-6 relative">
+                        <div className="flex gap-4">
+                          <div className="flex-1 bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col items-center justify-center">
+                            <Users className="h-8 w-8 text-orange-500 mb-2" />
+                            <span className="text-2xl font-black text-white">15</span>
+                            <span className="text-[10px] font-black text-gray-500 uppercase">Tables</span>
+                          </div>
+                          <div className="flex-1 bg-orange-500/10 border border-orange-500/30 rounded-3xl p-6 flex flex-col items-center justify-center">
+                            <QrCode className="h-8 w-8 text-orange-500 mb-2" />
+                            <span className="text-xs font-black text-white uppercase">PromptPay</span>
+                            <span className="text-[10px] font-black text-orange-500 uppercase mt-1">Ready</span>
+                          </div>
+                        </div>
+                        <div className="bg-white/5 rounded-3xl p-6 border border-white/5 flex-1 flex flex-col">
+                          <div className="flex justify-between items-center mb-6">
+                            <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Table Map (Real-time)</span>
+                            <div className="flex gap-1">
+                              <div className="h-1 w-1 rounded-full bg-emerald-500"></div>
+                              <div className="h-1 w-1 rounded-full bg-emerald-500"></div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-4 gap-3">
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                              <div key={i} className={`aspect-square rounded-xl border flex flex-col items-center justify-center gap-1 ${i % 3 === 0 ? "bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20" : "bg-white/5 border-white/10 text-gray-500"}`}>
+                                <span className="text-[8px] font-black">T-{i}</span>
+                                <div className={`h-1 w-3 rounded-full ${i % 3 === 0 ? "bg-white/30" : "bg-white/10"}`}></div>
                               </div>
                             ))}
                           </div>
@@ -1067,7 +1129,7 @@ export default function Home() {
                 { icon: Wand2, t: "AI Menu Generator", d: "ถ่ายรูปเมนูกระดาษ แล้วให้ AI แปลงเป็นเมนูเว็บบอร์ดอัตโนมัติในหลักวินาที" },
                 { icon: Zap, t: "✨ AI Smart Upselling", d: "ระบบแนะนำเมนูที่ทานคู่กันอัจฉริยะ (Powered by Gemini) ช่วยเพิ่มยอดขายต่อบิลได้ 15-30%" },
                 { icon: ShieldCheck, t: "🛡️ Real-time Inventory", d: "ระบบตัดสต๊อกอัตโนมัติ และขึ้นสถานะ 'Sold Out' ทันทีเมื่อของหมด ป้องกันออเดอร์ซ้อน" },
-                { icon: Printer, t: "Receipt & Kitchen Print", d: "รองรับการพิมพ์ใบเสร็จและใบแจ้งเข้าครัวอัตโนมัติ (Compatible with 80mm printers)" },
+                { icon: Printer, t: "Digital Receipt & Print", d: "ส่งใบเสร็จเข้า LINE อัตโนมัติ หรือพิมพ์ผ่านเครื่องความร้อน (Compatible with 80mm printers) เลือกได้ตามใจคุณ" },
                 { icon: Bell, t: "🛎️ LINE Messaging API", d: "แจ้งเตือนออเดอร์ใหม่เข้า LINE ส่วนตัวของเจ้าของร้านแบบ Real-time พร้อมสรุปยอด" },
                 { icon: LayoutPanelTop, t: "Dynamic Table Layout", d: "จัดวางผังโต๊ะอาหารแบบ Visual ช่วยให้พนักงานบริหารจัดการโต๊ะได้ไม่พลาด" },
                 { icon: BarChart3, t: "Deep Analytics", d: "รายงานวิเคราะห์เมนูไหนขายดี ช่วงเวลาไหนออเดอร์พีค เพื่อวางแผนสต็อกได้แม่นยำ" },
@@ -1355,7 +1417,7 @@ function ConversionFaq() {
   const faqs = [
     { q: "ไม่ได้จดทะเบียนบริษัท สมัครได้ไหม?", a: "ได้แน่นอนครับ! เราสนับสนุนทั้งร้านค้าบุคคลธรรมดา แผงลอย และร้านขนาดเล็ก เพียงมีเบอร์โทรศัพท์และบัญชีธนาคารก็เริ่มได้ทันที" },
     { q: "ต้องซื้อเครื่อง POS หรือ iPad ใหม่ไหม?", a: "ไม่จำเป็นครับ Tamjai Pro ทำงานบนมือถือทั่วไป หรือใช้แท็บเล็ตที่คุณมีอยู่แล้วได้เลย ขอแค่มีอินเทอร์เน็ตก็พอ" },
-    { q: "ถ้าใช้ปริ้นเตอร์ 80mm อยู่แล้ว จะใช้ร่วมกันได้ไหม?", a: "รองรับครับ! ระบบของเราสามารถส่งออเดอร์เข้าปริ้นเตอร์ความร้อนมาตรฐาน (ESC/POS) แบรนด์ทั่วไปได้เลย" },
+    { q: "ไม่ได้ซื้อเครื่องพิมพ์/ปริ้นเตอร์ จะใช้งานได้ไหม?", a: "ใช้งานได้ 100% ครับ! ระบบของเรามี 'Digital Receipt' ส่งใบแจ้งออเดอร์เข้า LINE หรือแสดงหน้าจอ KDS ให้เชฟดูได้ทันที ประหยัดค่ากระดาษไปในตัว" },
     { q: "มีพนักงานช่วยสอนการใช้งานไหม?", a: "เรามี AI Mascot คอยสแตนด์บายตอบคำถาม 24 ชม. และมีคู่มือภาษาไทยแบบวิดีโอให้ดู ทำตามได้ใน 5 นาทีครับ" },
     { q: "ลูกค้ายกเลิกออเดอร์ได้ไหม?", a: "คุณ (เจ้าของร้าน) มีอำนาจตัดสินใจสูงสุดครับ สามารถกดยกเลิกหรือแจ้งสถานะอาหารให้ลูกค้าทราบได้แบบ Real-time" },
   ];

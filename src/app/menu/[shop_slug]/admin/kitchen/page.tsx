@@ -14,7 +14,7 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
     const [notifEnabled, setNotifEnabled] = useState(false);
     const [alertsActive, setAlertsActive] = useState(true);
     const [updatingId, setUpdatingId] = useState<string | null>(null);
-    const prevNewCount = useRef(0);
+    const seenOrderIds = useRef<Set<string>>(new Set());
 
     const fetchOrders = async () => {
         try {
@@ -24,13 +24,17 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                 // We only care about active kitchen orders (new, prepping, ready)
                 const activeOrders = data.filter((o: any) => ["new", "prepping", "ready"].includes(o.status));
 
-                // Sound and Notification logic
+                // Sound and Notification logic for REALLY new orders
                 const newOrders = data.filter((o: any) => o.status === "new");
-                if (newOrders.length > prevNewCount.current && !isLoading && alertsActive) {
+                const brandNewOrders = newOrders.filter((o: any) => !seenOrderIds.current.has(o.orderId));
+
+                if (brandNewOrders.length > 0 && !isLoading && alertsActive) {
                     playOrderSound();
-                    showBrowserNotification(`🔔 ออเดอร์ใหม่!`, `มีออเดอร์ใหม่ ${newOrders.length} รายการ`);
+                    showBrowserNotification(`🔔 ออเดอร์ใหม่!`, `มีออเดอร์ใหม่ ${brandNewOrders.length} รายการ`);
                 }
-                prevNewCount.current = newOrders.length;
+
+                // Update seen orders
+                newOrders.forEach((o: any) => seenOrderIds.current.add(o.orderId));
                 setOrders(activeOrders);
             }
         } catch (err) {
@@ -45,7 +49,7 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
             setNotifEnabled(typeof Notification !== "undefined" && Notification.permission === "granted");
         });
         fetchOrders();
-        const interval = setInterval(fetchOrders, 10000);
+        const interval = setInterval(fetchOrders, 5000); // 5s for PRO feel
         return () => clearInterval(interval);
     }, [shop_slug, isLoading, alertsActive]);
 
@@ -144,18 +148,36 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                         const isNew = order.status === "new";
                         const isPrepping = order.status === "prepping";
                         const elapsed = Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000);
+                        const orderType = order.orderType || "pickup";
+
+                        // Urgency logic
+                        let urgencyClass = "border-white/5";
+                        let headerClass = "bg-white/5 text-white";
+                        let pulseClass = "";
+
+                        if (isNew) {
+                            urgencyClass = "border-orange-500 shadow-2xl shadow-orange-500/10 ring-4 ring-orange-500/20";
+                            headerClass = "bg-orange-500 text-white";
+                        } else if (elapsed >= 15) {
+                            urgencyClass = "border-red-500 shadow-2xl shadow-red-500/20 animate-pulse-red";
+                            headerClass = "bg-red-600 text-white";
+                            pulseClass = "animate-pulse";
+                        } else if (elapsed >= 5) {
+                            urgencyClass = "border-amber-500 shadow-xl shadow-amber-500/10";
+                            headerClass = "bg-amber-500 text-white";
+                        }
 
                         return (
-                            <div key={order.id} className={`flex flex-col bg-gray-800 rounded-[2.5rem] border-2 transition-all overflow-hidden ${isNew ? "border-orange-500 shadow-2xl shadow-orange-500/10 ring-4 ring-orange-500/20" : "border-white/5"}`}>
+                            <div key={order.id} className={`flex flex-col bg-gray-800 rounded-[2.5rem] border-2 transition-all duration-500 overflow-hidden ${urgencyClass}`}>
                                 {/* Card Header */}
-                                <div className={`p-5 flex items-center justify-between ${isNew ? "bg-orange-500 text-white" : "bg-white/5 text-white"}`}>
+                                <div className={`p-5 flex items-center justify-between transition-colors duration-500 ${headerClass}`}>
                                     <div>
                                         <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none">Order ID</p>
                                         <h2 className="text-xl font-black tracking-tight mt-1 leading-none">#{order.orderId}</h2>
                                     </div>
                                     <div className="text-right">
-                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${elapsed > 20 ? "bg-red-500 text-white" : "bg-white/20 text-white"}`}>
-                                            <Clock className="h-3 w-3" />
+                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${elapsed >= 15 ? "bg-white text-red-600" : elapsed >= 5 ? "bg-white text-amber-600" : "bg-white/20 text-white"}`}>
+                                            <Clock className={`h-3 w-3 ${pulseClass}`} />
                                             {elapsed}m
                                         </div>
                                     </div>
@@ -165,12 +187,12 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                                 <div className="p-6 flex-1 space-y-4">
                                     <div className="space-y-3">
                                         {items.map((item: any, i: number) => (
-                                            <div key={i} className="flex gap-3">
-                                                <div className="h-8 w-8 rounded-xl bg-white/5 flex items-center justify-center text-lg font-black text-orange-500 shrink-0">
+                                            <div key={i} className="flex gap-4">
+                                                <div className="h-10 w-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-xl font-black text-orange-500 shrink-0">
                                                     {item.qty}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-black text-base leading-tight uppercase tracking-tight">{item.name}</p>
+                                                    <p className="font-black text-lg leading-tight uppercase tracking-tight">{item.name}</p>
                                                     <div className="flex flex-wrap gap-1 mt-1.5">
                                                         {Object.entries(item.options || {}).map(([group, labels]) => {
                                                             if (group === "note") return null;
@@ -182,9 +204,10 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                                                             ));
                                                         })}
                                                         {item.note && (
-                                                            <span className="text-[10px] font-black bg-orange-500 text-white px-2 py-1 rounded-lg uppercase tracking-tighter block w-full mt-1">
-                                                                📝 {item.note}
-                                                            </span>
+                                                            <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-2xl w-full mt-2">
+                                                                <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">Kitchen Note:</p>
+                                                                <p className="text-sm font-bold text-white leading-relaxed">"{item.note}"</p>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -195,11 +218,16 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
 
                                 {/* Info Footer */}
                                 <div className="px-6 py-4 bg-white/5 border-t border-white/5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-orange-500">
-                                        <Bike className="h-4 w-4" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Delivery ONLY</span>
+                                    <div className="flex items-center gap-2">
+                                        {orderType === "delivery" ? (
+                                            <><Bike className="h-4 w-4 text-orange-500" /><span className="text-[10px] font-black uppercase tracking-widest text-orange-500">Delivery</span></>
+                                        ) : orderType === "pickup" ? (
+                                            <><ShoppingBag className="h-4 w-4 text-emerald-500" /><span className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Pick-up</span></>
+                                        ) : (
+                                            <><div className="h-4 w-4 rounded-full bg-blue-500" /><span className="text-[10px] font-black uppercase tracking-widest text-blue-500">Dine-in</span></>
+                                        )}
                                     </div>
-                                    <p className="text-[11px] font-bold text-gray-400">{(order.customer as any).name}</p>
+                                    <p className="text-xs font-black text-white/50">{(order.customer as any).name}</p>
                                 </div>
 
                                 {/* Actions */}

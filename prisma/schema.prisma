@@ -47,9 +47,12 @@ model Tenant {
   bankAccount   String?
   deliveryEnabled Boolean @default(true)
   pickupEnabled  Boolean  @default(true)
+  deliveryFee    Decimal  @default(30)
   promptPayQrUrl String?
   socialLinks   Json?     // { facebook: string, instagram: string, tiktok: string }
   weeklyHolidays Json?    // Array of day indices [1, 2] where 1=Monday
+  addBefriendService Boolean @default(false)
+  trialEndsAt   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   
@@ -57,9 +60,43 @@ model Tenant {
   categories    Category[]
   products      Product[]
   orders        Order[]
+  tables        Table[]
+  shifts        Shift[]
   subscriptions Subscription[]
   helpdeskTickets HelpdeskTicket[]
   paymentApprovals PaymentApproval[]
+}
+
+model Shift {
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  staffId      String
+  openedAt     DateTime  @default(now())
+  closedAt     DateTime?
+  cashIn       Decimal   @default(0)
+  cashOut      Decimal?
+  actualCash   Decimal?
+  difference   Decimal?
+  status       String    @default("OPEN") // OPEN, CLOSED
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Table {
+  id           String   @id @default(cuid())
+  number       String
+  status       String   @default("vacant") // vacant, occupied, cleaning, reserved, billing
+  capacity     Int      @default(4)
+  currentItems Json?    // Array of { id, name, price, qty, imageUrl }
+  customer     String?  // Customer name for the table
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, number])
 }
 
 model User {
@@ -69,6 +106,7 @@ model User {
   name          String?
   image         String?
   password      String
+  posPin        String?   @unique // Alphanumeric PIN for POS terminal
   role          Role      @default(TENANT_ADMIN)
   tenantId      String?
   tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -80,21 +118,25 @@ model User {
 }
 
 model Category {
-  id          String    @id @default(cuid())
-  name        String
-  order       Int       @default(0)
-  tenantId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  products    Product[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  name      String
+  slug      String
+  order     Int       @default(0)
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([tenantId, slug])
+  @@unique([tenantId, name])
 }
 
 model Product {
   id            String    @id @default(cuid())
   name          String
   description   String?
-  price         Decimal
+  price         Float
   imageUrl      String?
   categoryId    String
   category      Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -107,6 +149,8 @@ model Product {
   tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, name])
 }
 
 model Order {
@@ -116,9 +160,12 @@ model Order {
   customer      Json     // { name, phone, address }
   items         Json     // Array of { name, qty, price, options }
   totalAmount   Decimal
+  tableNumber   String?
+  riderName     String?  // Optional name of the rider assigned
   status        String   @default("new") // new, prepping, ready, completed, cancelled
-  orderType     String   @default("pickup") // pickup, delivery
+  orderType     String   @default("pickup") // pickup, delivery, dinein
   paymentMethod String   @default("cash")
+  source        String   @default("storefront") // storefront, pos
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdAt     DateTime @default(now())

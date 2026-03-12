@@ -6,7 +6,7 @@ import { ShoppingBag, Clock, ChevronLeft, Plus, Minus, X, ChevronDown, MapPin, B
 import { useCart, CartItem as GlobalCartItem } from "@/context/CartContext";
 
 // ─── Types ─────────────────────────────────────────────
-type OrderType = "delivery" | "pickup";
+type OrderType = "delivery" | "pickup" | "dinein";
 
 interface CartItem {
     id: string;
@@ -54,11 +54,7 @@ interface Category {
 // (Mock data removed, now fetching from API)
 
 function isStoreOpen(): boolean {
-    const now = new Date();
-    const h = now.getHours();
-    const m = now.getMinutes();
-    const mins = h * 60 + m;
-    return mins >= 9 * 60 && mins < 17 * 60;
+    return true; // Always open for demo/development purposes
 }
 
 // ─── Add-ons Modal ──────────────────────────────────────
@@ -304,23 +300,29 @@ export default function MenuPage({ params, searchParams }: {
                 const settingsData = await settingsRes.json();
 
                 // Format price for decimal
-                const formattedProducts = productsData.map((p: any) => ({
+                const formattedProducts = Array.isArray(productsData) ? productsData.map((p: any) => ({
                     ...p,
                     price: parseFloat(p.price)
-                }));
+                })) : [];
 
-                setCategories(catsData);
+                setCategories(Array.isArray(catsData) ? catsData : []);
                 setMenuItems(formattedProducts);
                 setSettings(settingsData);
-                if (catsData.length > 0) setActiveCategory(catsData[0].id);
+                if (Array.isArray(catsData) && catsData.length > 0) setActiveCategory(catsData[0].id);
 
-                // Update Order Type based on store settings
+                // Update Order Type based on store settings and plan
                 if (settingsData) {
+                    const plan = settingsData.plan || "FREE";
                     const canDelivery = settingsData.deliveryEnabled ?? true;
-                    const canPickup = settingsData.pickupEnabled ?? true;
+                    // const canPickup = settingsData.pickupEnabled ?? true; // Implicitly always true for PRO/POS?
 
-                    if (canDelivery) setOrderType("delivery");
-                    else if (canPickup) setOrderType("pickup");
+                    if (table && plan === 'POS') {
+                        setOrderType("dinein");
+                    } else if (canDelivery && (plan === 'PRO' || plan === 'POS')) {
+                        setOrderType("delivery");
+                    } else if (plan === 'PRO' || plan === 'POS') {
+                        setOrderType("pickup");
+                    }
                 }
             } catch (err) {
                 console.error("Failed to fetch menu data", err);
@@ -391,8 +393,9 @@ export default function MenuPage({ params, searchParams }: {
     const recommendedItems = menuItems.filter(m => m.isRecommended);
 
     const ORDER_TYPES: { id: OrderType; label: string; icon: React.ReactNode }[] = [
-        { id: "delivery", label: "จัดส่งถึงที่ (DELIVERY)", icon: <Bike className="h-4 w-4" /> },
-        { id: "pickup", label: "รับกลับบ้าน (PICKUP)", icon: <Store className="h-4 w-4" /> },
+        { id: "dinein", label: "ทานที่ร้าน", icon: <Users className="h-4 w-4" /> },
+        { id: "pickup", label: "รับกลับบ้าน", icon: <Store className="h-4 w-4" /> },
+        { id: "delivery", label: "จัดส่งถึงที่", icon: <Bike className="h-4 w-4" /> },
     ];
 
     return (
@@ -428,9 +431,14 @@ export default function MenuPage({ params, searchParams }: {
                             </div>
                             <div className="flex-1 pb-1">
                                 <h1 className="text-xl font-black leading-tight drop-shadow-md">{storeName}</h1>
-                                <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mt-0.5 line-clamp-1">
-                                    {settings?.description || "ความอร่อยที่คุณออกแบบเองได้ ตลอด 24 ชม."}
-                                </p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                    <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest line-clamp-1">
+                                        {settings?.description || "ความอร่อยที่คุณออกแบบเองได้ ตลอด 24 ชม."}
+                                    </p>
+                                    {tableNumber && (
+                                        <span className="bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full ring-2 ring-white/20">โต๊ะที่ {tableNumber}</span>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -447,20 +455,32 @@ export default function MenuPage({ params, searchParams }: {
                             </div>
                         </div>
 
-                        {/* Order type tabs */}
-                        <div className="flex bg-gray-100 p-1.5 rounded-2xl gap-0.5">
+                        {/* Order type tabs - Premium Segmented Control */}
+                        <div className="flex bg-gray-50 p-1.5 rounded-[2rem] gap-1.5 border border-gray-100/50 shadow-inner">
                             {ORDER_TYPES.filter(t => {
-                                if (t.id === "delivery") return settings?.deliveryEnabled ?? true;
-                                if (t.id === "pickup") return settings?.pickupEnabled ?? true;
-                                return true;
+                                const plan = settings?.plan || "FREE";
+                                if (t.id === "dinein") return plan === 'POS';
+                                if (t.id === "pickup") return plan === 'PRO' || plan === 'POS';
+                                if (t.id === "delivery") return (plan === 'PRO' || plan === 'POS') && (settings?.deliveryEnabled ?? true);
+                                return false;
                             }).map(t => (
                                 <button
                                     key={t.id}
                                     onClick={() => setOrderType(t.id)}
-                                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all ${orderType === t.id ? "bg-white text-orange-600 shadow-lg shadow-orange-100" : "text-gray-500 hover:text-gray-700"}`}
+                                    className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-4 rounded-[1.5rem] transition-all duration-500 relative ${orderType === t.id
+                                            ? "bg-white text-orange-600 shadow-[0_10px_25px_-5px_rgba(249,115,22,0.15)] border border-orange-50/50 scale-[1.03]"
+                                            : "text-gray-400 hover:text-gray-600 hover:bg-white/40"
+                                        }`}
                                 >
-                                    {t.icon}
-                                    {t.label}
+                                    <div className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-500 ${orderType === t.id ? "bg-orange-500 text-white rotate-[360deg] shadow-lg shadow-orange-200" : "bg-gray-100 text-gray-400"}`}>
+                                        {t.icon}
+                                    </div>
+                                    <span className={`text-[10px] font-black uppercase tracking-[0.1em] transition-all ${orderType === t.id ? "opacity-100 translate-y-0" : "opacity-60 translate-y-0.5"}`}>
+                                        {t.label}
+                                    </span>
+                                    {orderType === t.id && (
+                                        <div className="absolute -bottom-1 h-1 w-4 bg-orange-500 rounded-full" />
+                                    )}
                                 </button>
                             ))}
                         </div>

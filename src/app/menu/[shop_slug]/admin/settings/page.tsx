@@ -20,6 +20,7 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
         bankAccount: "",
         deliveryEnabled: true,
         pickupEnabled: true,
+        deliveryFee: 30,
         lineUserId: "",
         description: "",
         bannerUrl: "",
@@ -45,6 +46,7 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
                         bankAccount: data.bankAccount || "",
                         deliveryEnabled: data.deliveryEnabled ?? true,
                         pickupEnabled: data.pickupEnabled ?? true,
+                        deliveryFee: data.deliveryFee ?? 30,
                         lineUserId: data.lineUserId || "",
                         description: data.description || "",
                         bannerUrl: data.bannerUrl || "",
@@ -282,6 +284,19 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
                         </button>
                     </div>
                 ))}
+
+                {form.deliveryEnabled && (
+                    <div className="pt-2 border-t border-gray-50">
+                        <label className="text-xs font-semibold text-gray-500 block mb-1">ค่าจัดส่ง (บาท)</label>
+                        <input
+                            type="number"
+                            value={form.deliveryFee}
+                            onChange={e => setForm({ ...form, deliveryFee: Number(e.target.value) })}
+                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all font-bold"
+                        />
+                        <p className="text-[10px] text-gray-400 mt-1">ค่าจัดส่งจะถูกคำนวณเมื่อลูกค้าเลือก "จัดส่งถึงที่"</p>
+                    </div>
+                )}
             </section>
 
             {/* Bank Account */}

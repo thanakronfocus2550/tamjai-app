@@ -28,3 +28,19 @@ body {
   background: var(--background);
   font-family: var(--font-sans);
 }
+
+@keyframes pulse-red {
+
+  0%,
+  100% {
+    border-color: rgb(239 68 68 / 0.2);
+  }
+
+  50% {
+    border-color: rgb(239 68 68 / 1);
+  }
+}
+
+.animate-pulse-red {
+  animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

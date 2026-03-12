@@ -47,25 +47,28 @@ export const authOptions: NextAuthOptions = {
                     role: user.role,
                     tenantId: user.tenantId,
                     shopSlug: user.tenant?.slug,
+                    plan: user.tenant?.plan,
                 };
             },
         }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
+        async jwt({ token, user }: any) {
             if (user) {
                 token.role = user.role;
                 token.tenantId = user.tenantId;
                 token.shopSlug = user.shopSlug;
+                token.plan = user.plan;
             }
             return token;
         },
-        async session({ session, token }) {
+        async session({ session, token }: any) {
             if (token && session.user) {
-                session.user.id = token.sub as string;
-                session.user.role = token.role as string;
-                session.user.tenantId = token.tenantId as string | null;
-                session.user.shopSlug = token.shopSlug as string | null;
+                (session.user as any).id = token.sub as string;
+                (session.user as any).role = token.role as string;
+                (session.user as any).tenantId = token.tenantId as string | null;
+                (session.user as any).shopSlug = token.shopSlug as string | null;
+                (session.user as any).plan = token.plan as string | null;
             }
             return session;
         },

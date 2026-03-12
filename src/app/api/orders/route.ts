@@ -8,7 +8,8 @@ interface OrderPayload {
     payMethod: string;
     orderType: string;
     total: number;
-    promoCode?: string; // Add promoCode field
+    promoCode?: string;
+    tableNumber?: string | null;
 }
 
 // LINE Notify message builder
@@ -22,8 +23,8 @@ function buildLineMessage(order: OrderPayload, orderId: string): string {
 ━━━━━━━━━━━━━━
 📍 ร้าน: ${order.shop_slug}
 👤 ${order.customer.name} (${order.customer.phone})
-🛵 ${order.orderType === "delivery" ? "เดลิเวอรี่" : "รับเอง"}
-${order.customer.address ? `📌 ${order.customer.address}` : ""}
+📌 ประเภท: ${order.orderType === "delivery" ? "🛵 เดลิเวอรี่" : order.orderType === "dinein" ? `🍽️ ทานที่ร้าน (โต๊ะ ${order.tableNumber})` : "🏠 รับเอง"}
+${order.customer.address ? `📍 ที่อยู่: ${order.customer.address}` : ""}
 ━━━━━━━━━━━━━━
 🍽️ รายการ:
 ${itemList}
@@ -101,8 +102,13 @@ export async function POST(request: NextRequest) {
                 paymentMethod: body.payMethod,
                 // @ts-ignore
                 orderType: body.orderType || "pickup",
+                // @ts-ignore
+                riderName: (body as any).riderName,
+                // @ts-ignore
+                tableNumber: body.tableNumber?.toString(),
                 tenantId: tenant.id,
-                status: "new",
+                status: (body as any).source === "pos" ? "completed" : "new", // POS orders are often paid immediately
+                source: (body as any).source || "storefront"
             }
         });
 
@@ -158,6 +164,7 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const shop_slug = searchParams.get("shop_slug");
         const status = searchParams.get("status");
+        const tableNumber = searchParams.get("tableNumber");
 
         if (!shop_slug) {
             return NextResponse.json({ error: "Missing shop_slug" }, { status: 400 });
@@ -182,9 +189,11 @@ export async function GET(request: NextRequest) {
         }
 
         const orders = await prisma.order.findMany({
+            // @ts-ignore
             where: {
-                tenantId: tenant.id, // Use tenantId instead of shopSlug for filtering
-                ...(status ? { status } : {})
+                tenantId: tenant.id,
+                ...(status ? { status: status.includes(",") ? { in: status.split(",") } : status } : {}),
+                ...(tableNumber ? { tableNumber: tableNumber } : {})
             },
             orderBy: {
                 createdAt: "desc"
@@ -192,8 +201,17 @@ export async function GET(request: NextRequest) {
         });
 
         return NextResponse.json(orders, { status: 200 });
-    } catch (err) {
+    } catch (err: any) {
         console.error("Fetch orders error:", err);
-        return NextResponse.json({ error: "Failed to fetch orders" }, { status: 500 });
+        const { searchParams } = new URL(request.url);
+        const shop_slug = searchParams.get("shop_slug");
+        const status = searchParams.get("status");
+        const tableNumber = searchParams.get("tableNumber");
+        return NextResponse.json({
+            error: "Failed to fetch orders",
+            message: err.message,
+            debug: { shop_slug, status, tableNumber },
+            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+        }, { status: 500 });
     }
 }
