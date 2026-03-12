@@ -2,10 +2,12 @@
 
 import React, { useState, use, useEffect } from "react";
 import Link from "next/link";
-import { Save, Bell, Clock, MapPin, Phone, Globe, CreditCard, Palette, ChevronRight, MessageCircle, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Save, Bell, Clock, MapPin, Phone, Globe, CreditCard, Palette, ChevronRight, MessageCircle, ExternalLink, CheckCircle2, Lock as LockIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function StoreSettingsPage({ params }: { params: Promise<{ shop_slug: string }> }) {
     const { shop_slug } = use(params);
+    const { data: session } = useSession();
 
     const [isLoading, setIsLoading] = useState(true);
     const [saved, setSaved] = useState(false);
@@ -29,9 +31,15 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
         weeklyHolidays: [] as number[],
     });
 
+    const [userPosPin, setUserPosPin] = useState("");
+    const [isUpdatingPin, setIsUpdatingPin] = useState(false);
+
+    const userPlan = ((session?.user as any)?.plan || "FREE").toUpperCase();
+
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Fetch Store Settings
                 const res = await fetch(`/api/menu/${shop_slug}/settings`);
                 if (res.ok) {
                     const data = await res.json();
@@ -55,6 +63,15 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
                         weeklyHolidays: data.weeklyHolidays || [],
                     });
                 }
+
+                // Fetch current user's POS PIN if they have a POS plan
+                if ((session?.user as any)?.plan?.toUpperCase() === 'POS') {
+                    const pinRes = await fetch('/api/user/pin');
+                    if (pinRes.ok) {
+                        const pinData = await pinRes.json();
+                        setUserPosPin(pinData.posPin || "");
+                    }
+                }
             } catch (err) {
                 console.error("Failed to fetch settings", err);
             } finally {
@@ -77,6 +94,27 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
         } catch (err) {
             console.error(err);
             alert("เกิดข้อผิดพลาดในการบันทึก");
+        }
+    };
+
+    const updatePin = async () => {
+        if (!/^\d{6}$/.test(userPosPin)) {
+            alert("PIN ต้องเป็นตัวเลข 6 หลัก");
+            return;
+        }
+        setIsUpdatingPin(true);
+        try {
+            const res = await fetch('/api/user/pin', {
+                method: "PUT",
+                body: JSON.stringify({ posPin: userPosPin })
+            });
+            if (res.ok) {
+                alert("บันทึกรหัส PIN สำเร็จ");
+            }
+        } catch (err) {
+            alert("เกิดข้อผิดพลาด");
+        } finally {
+            setIsUpdatingPin(false);
         }
     };
 
@@ -387,6 +425,41 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
                     </ol>
                 </div>
             </section>
+
+            {/* POS PIN Section (Only for POS Plan) */}
+            {userPlan === 'POS' && (
+                <section className="bg-white border border-purple-100 rounded-2xl p-4 space-y-4 shadow-sm shadow-purple-50">
+                    <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                        <LockIcon className="h-4 w-4 text-purple-500" /> ความปลอดภัย & POS PIN
+                    </h3>
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                        ตั้งรหัส PIN 6 หลักเพื่อใช้ในการปลดล็อกเครื่อง POS Terminal สำหรับพนักงานและแอดมิน
+                    </p>
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                            <input
+                                type="text"
+                                maxLength={6}
+                                value={userPosPin}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                                    setUserPosPin(val);
+                                }}
+                                placeholder="******"
+                                className="w-full border border-gray-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-black text-purple-600 outline-none focus:border-purple-400 transition-all tracking-[1em]"
+                            />
+                        </div>
+                        <button
+                            onClick={updatePin}
+                            disabled={isUpdatingPin || userPosPin.length !== 6}
+                            className="bg-purple-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-purple-700 disabled:opacity-20 transition-all"
+                        >
+                            {isUpdatingPin ? "..." : "บันทึก PIN"}
+                        </button>
+                    </div>
+                </section>
+            )}
 
             {/* Store URL */}
             <section className="bg-white border border-gray-200 shadow-sm rounded-2xl p-4">

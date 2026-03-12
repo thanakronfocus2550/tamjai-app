@@ -52,7 +52,7 @@ export default function StoreAdminLayout({
             }
 
             // Protection for POS pages, using case-insensitive check for userPlan
-            if (pathname.includes('/admin/pos') && userPlan !== 'POS') {
+            if (pathname.includes('/admin/pos') && userPlan !== 'POS' && !isSuper) {
                 router.replace(`/menu/${shop_slug}/admin`);
             }
         }

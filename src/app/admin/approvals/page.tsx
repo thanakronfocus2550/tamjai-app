@@ -244,8 +244,24 @@ export default function ApprovalsPage() {
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[500px]">
-                                    <div className="rounded-3xl bg-gray-100 overflow-hidden relative group h-full">
-                                        <img src={selectedApproval.slipUrl} alt="Slip" className="w-full h-full object-contain" />
+                                    <div className="rounded-3xl bg-gray-100 overflow-hidden relative group h-full flex items-center justify-center">
+                                        {selectedApproval.slipUrl ? (
+                                            <img
+                                                src={selectedApproval.slipUrl}
+                                                alt="Slip"
+                                                className="w-full h-full object-contain"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x800?text=Image+Load+Failed';
+                                                }}
+                                            />
+                                        ) : (
+                                            <div className="text-center p-8">
+                                                <div className="h-16 w-16 bg-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                                    <Info className="h-8 w-8 text-gray-400" />
+                                                </div>
+                                                <p className="text-sm font-bold text-gray-500">ไม่พบรูปภาพหลักฐาน <br /> (Missing or Invalid URL)</p>
+                                            </div>
+                                        )}
                                         <div className="absolute top-4 right-4 bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-black text-gray-900 flex items-center gap-2">
                                             <Info className="h-3 w-3" /> แตะเพื่อซูม
                                         </div>

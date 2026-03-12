@@ -9,7 +9,7 @@ declare module "next-auth" {
             tenantId: string | null
             shopSlug: string | null
             plan: string | null
-            trialEndsAt: string | null
+            trialEndsAt: Date | string | null
             isActive: boolean
         } & DefaultSession["user"]
     }
@@ -19,6 +19,9 @@ declare module "next-auth" {
         role: string
         tenantId: string | null
         shopSlug?: string | null
+        plan?: string | null
+        trialEndsAt?: Date | string | null
+        isActive?: boolean
     }
 }
 
@@ -27,5 +30,8 @@ declare module "next-auth/jwt" {
         role: string
         tenantId: string | null
         shopSlug?: string | null
+        plan?: string | null
+        trialEndsAt?: Date | string | null
+        isActive?: boolean
     }
 }

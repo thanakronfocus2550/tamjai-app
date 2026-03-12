@@ -312,15 +312,19 @@ export default function MenuPage({ params, searchParams }: {
 
                 // Update Order Type based on store settings and plan
                 if (settingsData) {
-                    const plan = settingsData.plan || "FREE";
+                    const plan = (settingsData.plan || "FREE").toUpperCase();
                     const canDelivery = settingsData.deliveryEnabled ?? true;
-                    // const canPickup = settingsData.pickupEnabled ?? true; // Implicitly always true for PRO/POS?
 
                     if (table && plan === 'POS') {
                         setOrderType("dinein");
-                    } else if (canDelivery && (plan === 'PRO' || plan === 'POS')) {
-                        setOrderType("delivery");
                     } else if (plan === 'PRO' || plan === 'POS') {
+                        if (canDelivery) {
+                            setOrderType("delivery");
+                        } else {
+                            setOrderType("pickup");
+                        }
+                    } else {
+                        // FREE plan always defaults to pickup
                         setOrderType("pickup");
                     }
                 }
@@ -456,11 +460,11 @@ export default function MenuPage({ params, searchParams }: {
                         </div>
 
                         {/* Order type tabs - Premium Segmented Control */}
-                        <div className="flex bg-gray-50 p-1.5 rounded-[2rem] gap-1.5 border border-gray-100/50 shadow-inner">
+                        <div className="flex bg-gray-100/50 p-1.5 rounded-[2rem] gap-1.5 border border-gray-100 shadow-inner">
                             {ORDER_TYPES.filter(t => {
-                                const plan = settings?.plan || "FREE";
+                                const plan = (settings?.plan || "FREE").toUpperCase();
                                 if (t.id === "dinein") return plan === 'POS';
-                                if (t.id === "pickup") return plan === 'PRO' || plan === 'POS';
+                                if (t.id === "pickup") return true; // Everyone gets pickup (FREE, PRO, POS)
                                 if (t.id === "delivery") return (plan === 'PRO' || plan === 'POS') && (settings?.deliveryEnabled ?? true);
                                 return false;
                             }).map(t => (
@@ -468,8 +472,8 @@ export default function MenuPage({ params, searchParams }: {
                                     key={t.id}
                                     onClick={() => setOrderType(t.id)}
                                     className={`flex-1 flex flex-col items-center justify-center gap-1.5 py-4 rounded-[1.5rem] transition-all duration-500 relative ${orderType === t.id
-                                            ? "bg-white text-orange-600 shadow-[0_10px_25px_-5px_rgba(249,115,22,0.15)] border border-orange-50/50 scale-[1.03]"
-                                            : "text-gray-400 hover:text-gray-600 hover:bg-white/40"
+                                        ? "bg-white text-orange-600 shadow-[0_10px_25px_-10px_rgba(249,115,22,0.3)] border border-orange-100/50 scale-[1.03]"
+                                        : "text-gray-400 hover:text-gray-600 hover:bg-white/40"
                                         }`}
                                 >
                                     <div className={`h-8 w-8 rounded-xl flex items-center justify-center transition-all duration-500 ${orderType === t.id ? "bg-orange-500 text-white rotate-[360deg] shadow-lg shadow-orange-200" : "bg-gray-100 text-gray-400"}`}>
@@ -478,9 +482,6 @@ export default function MenuPage({ params, searchParams }: {
                                     <span className={`text-[10px] font-black uppercase tracking-[0.1em] transition-all ${orderType === t.id ? "opacity-100 translate-y-0" : "opacity-60 translate-y-0.5"}`}>
                                         {t.label}
                                     </span>
-                                    {orderType === t.id && (
-                                        <div className="absolute -bottom-1 h-1 w-4 bg-orange-500 rounded-full" />
-                                    )}
                                 </button>
                             ))}
                         </div>

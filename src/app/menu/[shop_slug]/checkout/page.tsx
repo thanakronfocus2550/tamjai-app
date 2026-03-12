@@ -41,10 +41,21 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                 const res = await fetch(`/api/menu/${shop_slug}/settings`);
                 if (res.ok) {
                     const data = await res.json();
-                    setTenantSettings(data);
+                    const plan = (data.plan || "FREE").toUpperCase();
+                    const canDelivery = data.deliveryEnabled ?? true;
+
                     // Strictly check for POS plan for dine-in
-                    if (tableNumber && data.plan === 'POS') {
+                    if (tableNumber && plan === 'POS') {
                         setOrderMode("dinein");
+                    } else if (plan === 'PRO' || plan === 'POS') {
+                        if (canDelivery) {
+                            setOrderMode("delivery");
+                        } else {
+                            setOrderMode("pickup");
+                        }
+                    } else {
+                        // FREE plan always defaults to pickup
+                        setOrderMode("pickup");
                     }
                 }
             } catch (err) {
@@ -92,10 +103,6 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
         setIsCheckingPromo(true);
         setPromoError("");
         try {
-            // Simplified validation: send to a mock or real api
-            // Since we don't have a dedicated public validation API yet, 
-            // we'll just implement a simple check here or assume it's valid if we want to show it.
-            // Better: Add an API for this.
             const res = await fetch(`/api/admin/promotions?code=${promoCode}`);
             if (res.ok) {
                 const promo = await res.json();
@@ -198,9 +205,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                         </div>
                     )}
 
-                    {/* Order Mode - Re-enabled Pickup & Added Dine-in */}
+                    {/* Order Mode selector */}
                     <div className="flex bg-gray-100 p-1.5 rounded-2xl gap-1">
-                        {tableNumber && (
+                        {tableNumber && (tenantSettings?.plan === 'POS') && (
                             <button
                                 type="button"
                                 onClick={() => setOrderMode("dinein")}
@@ -209,14 +216,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                                 <span className="flex items-center gap-2 italic"><Users className="h-4 w-4" /> โต๊ะ {tableNumber}</span>
                             </button>
                         )}
-                        <button
-                            type="button"
-                            onClick={() => setOrderMode("delivery")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${orderMode === "delivery" ? "bg-white text-orange-600 shadow-lg shadow-orange-100/50" : "text-gray-400 hover:text-gray-600"}`}
-                        >
-                            <Bike className="h-4 w-4" />
-                            จัดส่งถึงที่
-                        </button>
+                        {((tenantSettings?.plan === 'PRO' || tenantSettings?.plan === 'POS') && (tenantSettings?.deliveryEnabled !== false)) && (
+                            <button
+                                type="button"
+                                onClick={() => setOrderMode("delivery")}
+                                className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${orderMode === "delivery" ? "bg-white text-orange-600 shadow-lg shadow-orange-100/50" : "text-gray-400 hover:text-gray-600"}`}
+                            >
+                                <Bike className="h-4 w-4" />
+                                จัดส่งถึงที่
+                            </button>
+                        )}
                         <button
                             type="button"
                             onClick={() => setOrderMode("pickup")}

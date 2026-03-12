@@ -9,9 +9,9 @@ export const authOptions: NextAuthOptions = {
     session: {
         strategy: "jwt",
     },
-    pages: {
-        signIn: "/admin/login",
-    },
+    // pages: {
+    //     signIn: "/admin/login",
+    // },
     providers: [
         CredentialsProvider({
             name: "Credentials",
@@ -46,10 +46,10 @@ export const authOptions: NextAuthOptions = {
                     name: user.name,
                     role: user.role,
                     tenantId: user.tenantId,
-                    shopSlug: user.tenant?.slug,
-                    plan: user.tenant?.plan,
-                    trialEndsAt: user.tenant?.trialEndsAt,
-                    isActive: user.tenant?.isActive,
+                    shopSlug: user.tenant?.slug || null,
+                    plan: user.tenant?.plan || "FREE",
+                    trialEndsAt: user.tenant?.trialEndsAt || null,
+                    isActive: user.tenant?.isActive ?? true,
                 };
             },
         }),

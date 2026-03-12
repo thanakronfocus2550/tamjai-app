@@ -260,11 +260,11 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
     const updateQty = (productId: string, delta: number) => {
         setCart(prev => prev.map(item => {
             if (item.id === productId) {
-                const newQty = Math.max(1, item.qty + delta);
+                const newQty = item.qty + delta;
                 return { ...item, qty: newQty };
             }
             return item;
-        }).filter(item => item.qty > 0 || delta > 0)); // Remove if 0 and delta is negative? No, delta might be -1.
+        }).filter(item => item.qty > 0));
     };
 
     const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
@@ -324,7 +324,8 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                     items: cart.map(item => ({ name: item.name, qty: item.qty, price: item.price, options: {} })),
                     customer: { name: customerName || (selectedTable ? `Table ${selectedTable}` : "Guest"), phone: "000-000-0000" },
                     payMethod: paymentMethod,
-                    orderType: orderType === "dinein" ? "pickup" : orderType,
+                    orderType: orderType,
+                    tableNumber: selectedTable,
                     riderName: orderType === "delivery" ? riderName : undefined,
                     total: cartTotal,
                     source: "pos"
@@ -546,6 +547,7 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                                                     handleMoveTable(t.number);
                                                 } else {
                                                     setSelectedTable(t.number);
+                                                    setOrderType("dinein"); // Set order type to dinein when selecting a table
                                                     fetchTableOrders(t.number);
                                                     setShowTableMap(false);
                                                 }

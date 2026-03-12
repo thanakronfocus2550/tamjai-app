@@ -82,17 +82,29 @@ export async function POST(req: Request) {
             );
         }
 
-        // Generate a unique reference code: REF-XXXX (4 random chars)
+        // Generate a unique reference code: REF-XXXXXX (6 random chars)
         const generateRefCode = () => {
-            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // No I, O, 0, 1 to avoid confusion
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
             let result = "";
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < 6; i++) {
                 result += chars.charAt(Math.floor(Math.random() * chars.length));
             }
             return `REF-${result}`;
         };
 
-        const refCode = generateRefCode();
+        let refCode = generateRefCode();
+        let isUnique = false;
+        let attempts = 0;
+
+        while (!isUnique && attempts < 5) {
+            const existing = await prisma.tenant.findUnique({ where: { refCode } });
+            if (!existing) {
+                isUnique = true;
+            } else {
+                refCode = generateRefCode();
+                attempts++;
+            }
+        }
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -162,7 +174,7 @@ export async function POST(req: Request) {
                             amount: (plan === 'pos' ? 600 : (couponCode === 'TAMJAI100' ? 350 : 450)) + (addBefriendService ? 100 : 0),
                             bank: `โอนเข้าแพลตฟอร์ม`,
                             status: 'PENDING',
-                            slipUrl: fileUrl, // Might be null on Vercel, but record is created
+                            slipUrl: fileUrl || slipBase64, // Fallback to base64 for Vercel support
                         }
                     });
 

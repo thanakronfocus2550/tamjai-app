@@ -21,6 +21,11 @@ async function main() {
                 closeTime: '22:00',
                 isActive: true,
                 isOpen: true,
+                plan: 'POS',
+                phone: '0812345678',
+                bankName: 'กสิกรไทย (KBank)',
+                bankAccount: '123-4-56789-0',
+                promptPayQrUrl: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=00020101021129370016A000000677010111011300668000000005802TH53037646304ABCD',
             },
         });
         console.log(`Tenant: ${tenant.slug} (${tenant.id})`);
@@ -33,14 +38,16 @@ async function main() {
             update: {
                 password: hashedPassword,
                 tenantId: tenant.id,
-                role: 'TENANT_ADMIN'
+                role: 'TENANT_ADMIN',
+                posPin: '123456'
             },
             create: {
                 email: 'admin@demo.com',
                 name: 'Demo Admin',
                 password: hashedPassword,
                 role: 'TENANT_ADMIN',
-                tenantId: tenant.id
+                tenantId: tenant.id,
+                posPin: '123456'
             }
         });
         console.log(`User: ${user.email} (Tenant: ${tenant.slug})`);
@@ -48,18 +55,19 @@ async function main() {
         // 3. Create Categories
         console.log("Creating Categories...");
         const categoriesData = [
-            { id: 'demo-cat-1', name: 'เมนูแนะนำ', order: 1 },
-            { id: 'demo-cat-2', name: 'อาหารจานเดียว', order: 2 },
-            { id: 'demo-cat-3', name: 'เครื่องดื่ม', order: 3 },
+            { id: 'demo-cat-1', name: 'เมนูแนะนำ', slug: 'recommended', order: 1 },
+            { id: 'demo-cat-2', name: 'อาหารจานเดียว', slug: 'main', order: 2 },
+            { id: 'demo-cat-3', name: 'เครื่องดื่ม', slug: 'drinks', order: 3 },
         ];
 
         for (const cat of categoriesData) {
             await prisma.category.upsert({
                 where: { id: cat.id },
-                update: { name: cat.name, order: cat.order },
+                update: { name: cat.name, slug: cat.slug, order: cat.order },
                 create: {
                     id: cat.id,
                     name: cat.name,
+                    slug: cat.slug,
                     order: cat.order,
                     tenantId: tenant.id
                 }

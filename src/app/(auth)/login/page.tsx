@@ -33,13 +33,13 @@ function LoginContent() {
                 setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
             } else {
                 // Get session to know the role for redirection
-                const sessionRes = await fetch("/api/auth/session");
-                const session = await sessionRes.json();
+                const { getSession } = await import("next-auth/react");
+                const session = await getSession();
 
                 if (session?.user?.role === 'SUPER_ADMIN') {
                     router.push('/admin');
-                } else if (session?.user?.shopSlug) {
-                    router.push(`/menu/${session.user.shopSlug}/admin`);
+                } else if ((session?.user as any)?.shopSlug) {
+                    router.push(`/menu/${(session?.user as any).shopSlug}/admin`);
                 } else {
                     router.push('/');
                 }
