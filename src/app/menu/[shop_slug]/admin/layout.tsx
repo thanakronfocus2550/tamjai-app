@@ -44,9 +44,10 @@ export default function StoreAdminLayout({
             // Check Role and Shop Ownership
             const isOwner = user?.shopSlug === shop_slug;
             const isSuper = user?.role === "SUPER_ADMIN";
+            const isStaff = user?.role === "STAFF" && isOwner;
 
-            if (!isSuper && (user?.role !== "TENANT_ADMIN" || !isOwner)) {
-                console.warn("Access Denied: Not the owner of this shop");
+            if (!isSuper && !isStaff && (user?.role !== "TENANT_ADMIN" || !isOwner)) {
+                console.warn("Access Denied: No permission for this shop");
                 router.replace("/");
                 return;
             }
