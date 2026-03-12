@@ -102,7 +102,7 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                 if (setData && !setData.error) setSettings(setData);
                 if (Array.isArray(tabData)) setTables(tabData);
 
-                if (shiftData && !shiftData.error) {
+                if (shiftData && !shiftData.error && shiftData.id) {
                     setCurrentShift(shiftData);
                 } else {
                     setShiftAction("OPEN");

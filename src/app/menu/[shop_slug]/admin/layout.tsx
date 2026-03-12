@@ -124,7 +124,14 @@ export default function StoreAdminLayout({
                         </div>
                         <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider flex items-center gap-1">
                             {((session?.user as any)?.trialEndsAt) ? (
-                                <>หมดอายุ (Trial): <span className="font-bold text-orange-500">{new Date((session?.user as any).trialEndsAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</span></>
+                                <>หมดอายุ (Trial): <span className="font-bold text-orange-500">
+                                    {(() => {
+                                        try {
+                                            const d = new Date((session?.user as any).trialEndsAt);
+                                            return !isNaN(d.getTime()) ? d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+                                        } catch { return 'N/A'; }
+                                    })()}
+                                </span></>
                             ) : (
                                 <>สถานะแผน: <span className="font-bold text-emerald-500">Active</span></>
                             )}

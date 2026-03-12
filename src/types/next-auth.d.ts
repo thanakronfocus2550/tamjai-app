@@ -8,6 +8,9 @@ declare module "next-auth" {
             role: string
             tenantId: string | null
             shopSlug: string | null
+            plan: string | null
+            trialEndsAt: string | null
+            isActive: boolean
         } & DefaultSession["user"]
     }
 

@@ -48,6 +48,8 @@ export const authOptions: NextAuthOptions = {
                     tenantId: user.tenantId,
                     shopSlug: user.tenant?.slug,
                     plan: user.tenant?.plan,
+                    trialEndsAt: user.tenant?.trialEndsAt,
+                    isActive: user.tenant?.isActive,
                 };
             },
         }),
@@ -59,6 +61,8 @@ export const authOptions: NextAuthOptions = {
                 token.tenantId = user.tenantId;
                 token.shopSlug = user.shopSlug;
                 token.plan = user.plan;
+                token.trialEndsAt = user.trialEndsAt;
+                token.isActive = user.isActive;
             }
             return token;
         },
@@ -69,6 +73,8 @@ export const authOptions: NextAuthOptions = {
                 (session.user as any).tenantId = token.tenantId as string | null;
                 (session.user as any).shopSlug = token.shopSlug as string | null;
                 (session.user as any).plan = token.plan as string | null;
+                (session.user as any).trialEndsAt = token.trialEndsAt;
+                (session.user as any).isActive = token.isActive;
             }
             return session;
         },

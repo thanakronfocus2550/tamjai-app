@@ -17,7 +17,7 @@ export default function RegisterPage() {
         password: "",
         confirmPassword: "",
         subdomain: "",
-        plan: "free" as "free" | "pro" | "pos",
+        plan: "pro" as "pro" | "pos",
         isTrial: true, // Default to trial for now
         couponCode: "",
         addBefriendService: false, // New service option
@@ -218,7 +218,13 @@ export default function RegisterPage() {
                             {step === 2 && "ตั้งชื่อลิ้งค์ที่ลูกค้าจะใช้เข้ามาสั่งอาหาร (เปลี่ยนได้ภายหลัง)"}
                             {step === 3 && (canRegisterFree ? "เริ่มทดลองใช้ฟรี 7 วัน หรือเลือกสมัครแพ็กเกจที่เหมาะสมกับร้านคุณ" : "เลือกแพ็กเกจที่เหมาะกับความต้องการของร้านคุณ")}
                             {step === 4 && (formData.isTrial ? "ตรวจสอบความถูกต้องของข้อมูลก่อนเริ่มการทดลองใช้งาน" : "กรุณาโอนเงินและอัปโหลดสลิปเพื่อเข้าสู่ขั้นตอนการเปิดร้าน")}
-                            {step === 5 && (formData.isTrial ? "รอสักครู่ ระบบกำลังเตรียมหน้าร้านให้คุณ โดยไม่ต้องตรวจสอบสลิปยืนยัน" : "กรุณารอผู้ดูแลระบบตรวจสอบข้อมูลและสลิปการโอนเงิน")}
+                            {step === 5 && (
+                                formData.isTrial
+                                    ? (formData.plan === 'pos'
+                                        ? "ระบบเปิดร้าน POS ให้คุณทันที! คุณสามารถตั้งค่าโต๊ะและเริ่มรับออเดอร์หน้าร้านได้เลยครับ"
+                                        : "ระบบเปิดร้านให้คุณทันที! คุณสามารถเริ่มลงเมนูและรับออเดอร์ออนไลน์ได้เลยครับ")
+                                    : "ทีมงานได้รับข้อมูลแล้ว จะตรวจสอบและอนุมัติร้านค้าให้คุณภายใน 24 ชม. ครับ"
+                            )}
                         </p>
                     </div>
 
@@ -460,29 +466,6 @@ export default function RegisterPage() {
                                             </div>
                                         </div>
 
-                                        <label className={`block relative p-4 rounded-2xl border-2 transition-all ${!canRegisterFree ? 'opacity-50 cursor-not-allowed border-gray-100 bg-gray-50' : formData.plan === 'free' ? 'border-brand-orange bg-orange-50/50 cursor-pointer' : 'border-gray-200 bg-white hover:border-brand-orange/30 cursor-pointer'}`}>
-                                            <input
-                                                type="radio"
-                                                name="plan"
-                                                value="free"
-                                                checked={formData.plan === 'free'}
-                                                onChange={() => canRegisterFree && updateForm('plan', 'free')}
-                                                disabled={!canRegisterFree}
-                                                className="absolute opacity-0"
-                                            />
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <p className="font-black text-gray-900">ทดลองใช้ฟรี 7 วัน (FREE)</p>
-                                                    <p className="text-xs font-medium text-gray-500 mt-1">
-                                                        ทลองใช้ฟีเจอร์ Pro ทั้งหมด นาน 7 วัน เพื่อเริ่มเรียนรู้วิธีการใช้ระบบ
-                                                    </p>
-                                                </div>
-                                                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${formData.plan === 'free' ? 'border-brand-orange bg-brand-orange' : 'border-gray-300'}`}>
-                                                    {formData.plan === 'free' && <div className="h-2 w-2 rounded-full bg-white"></div>}
-                                                </div>
-                                            </div>
-                                        </label>
-
                                         <label className={`block relative p-5 rounded-[2rem] border-2 transition-all cursor-pointer ${formData.plan === 'pro' ? 'border-brand-orange bg-orange-50/50 shadow-xl shadow-orange-100' : 'border-gray-200 bg-white hover:border-brand-orange/30'}`}>
                                             <input type="radio" name="plan" value="pro" checked={formData.plan === 'pro'} onChange={() => updateForm('plan', 'pro')} className="absolute opacity-0" />
                                             <div className="flex items-start justify-between">
@@ -491,8 +474,8 @@ export default function RegisterPage() {
                                                         <Bike className="h-6 w-6" />
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-gray-900 text-lg">Tamjai Pro</p>
-                                                        <p className="text-xs font-black text-brand-orange mt-0.5 tracking-wider uppercase">450฿ / เดือน</p>
+                                                        <p className="font-black text-gray-900 text-lg">Tamjai Pro {formData.isTrial ? "(Trial)" : ""}</p>
+                                                        <p className="text-xs font-black text-brand-orange mt-0.5 tracking-wider uppercase">{formData.isTrial ? "ฟรี 7 วันแรก" : "450฿ / เดือน"}</p>
                                                         <p className="text-[10px] font-bold text-gray-400 mt-1">เน้นจัดส่งและรับกลับบ้าน (Delivery & Pickup)</p>
                                                     </div>
                                                 </div>
@@ -511,10 +494,10 @@ export default function RegisterPage() {
                                                     </div>
                                                     <div>
                                                         <div className="flex items-center gap-2">
-                                                            <p className="font-black text-gray-900 text-lg">Tamjai POS</p>
+                                                            <p className="font-black text-gray-900 text-lg">Tamjai POS {formData.isTrial ? "(Trial)" : ""}</p>
                                                             <span className="bg-emerald-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Recommended</span>
                                                         </div>
-                                                        <p className="text-xs font-black text-brand-orange mt-0.5 tracking-wider uppercase">600฿ / เดือน</p>
+                                                        <p className="text-xs font-black text-brand-orange mt-0.5 tracking-wider uppercase">{formData.isTrial ? "ฟรี 7 วันแรก" : "600฿ / เดือน"}</p>
                                                         <p className="text-[10px] font-bold text-gray-400 mt-1">จัดการโต๊ะ + ระบบหน้าร้าน (Dine-in Terminal)</p>
                                                     </div>
                                                 </div>

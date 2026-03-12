@@ -18,7 +18,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
     const tableNumber = tableParam ? tableParam : null;
     const storeName = shop_slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-    const [orderMode, setOrderMode] = useState<OrderMode>(tableNumber ? "dinein" : "delivery");
+    const [orderMode, setOrderMode] = useState<OrderMode>("delivery"); // Default, will update once settings/table load
     const [payMethod, setPayMethod] = useState<PayMethod>("promptpay");
     const [name, setName] = useState("");
     const [phone, setPhone] = useState("");
@@ -42,13 +42,17 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                 if (res.ok) {
                     const data = await res.json();
                     setTenantSettings(data);
+                    // Strictly check for POS plan for dine-in
+                    if (tableNumber && data.plan === 'POS') {
+                        setOrderMode("dinein");
+                    }
                 }
             } catch (err) {
                 console.error("Failed to fetch settings:", err);
             }
         };
         fetchSettings();
-    }, [shop_slug]);
+    }, [shop_slug, tableNumber]);
 
     const subtotal = cartTotal;
     const baseDeliveryFee = tenantSettings?.deliveryFee !== undefined ? Number(tenantSettings.deliveryFee) : 30;
@@ -186,7 +190,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                     ) : (
                         <div className="bg-orange-50/50 border border-orange-100 rounded-2xl p-4 text-center">
                             <p className="text-sm font-bold text-orange-600">สั่งทานที่โต๊ะ {tableNumber}</p>
-                            <p className="text-xs text-gray-500 mt-1">ไม่ต้องกรอกข้อมูลผู้รับ ดำเนินการชำระเงินได้ทันที</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                                {tenantSettings?.plan === 'POS'
+                                    ? "ไม่ต้องกรอกข้อมูลผู้รับ ดำเนินการชำระเงินได้ทันที"
+                                    : "ขออภัย ร้านนี้ไม่รองรับการสั่งที่โต๊ะผ่านระบบปกติ"}
+                            </p>
                         </div>
                     )}
 
