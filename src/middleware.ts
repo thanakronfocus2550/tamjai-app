@@ -57,7 +57,7 @@ export async function middleware(req: NextRequest) {
 
         // Plan check for POS terminal
         if (pathname.includes("/admin/pos")) {
-            const plan = (token.plan || "FREE").toUpperCase();
+            const plan = ((token?.plan as string) || "FREE").toUpperCase();
             if (!isSuper && plan !== "POS") {
                 return NextResponse.redirect(new URL(`/menu/${shopSlug}/admin?error=pos_plan_required`, req.url));
             }

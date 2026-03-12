@@ -52,12 +52,9 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
     const [customerName, setCustomerName] = useState("");
     const [showSuccess, setShowSuccess] = useState(false);
     const [lastOrderId, setLastOrderId] = useState("");
-    const [isLocked, setIsLocked] = useState(true);
-    const [posPin, setPosPin] = useState("");
-    const [pinError, setPinError] = useState(false);
-    const [staffId, setStaffId] = useState("Not Logged In");
     const [currentTime, setCurrentTime] = useState(new Date());
     const [settings, setSettings] = useState<any>(null);
+    const [staffName, setStaffName] = useState("Admin");
     const [showPaymentQR, setShowPaymentQR] = useState(false);
     const [promptPayPayload, setPromptPayPayload] = useState("");
     const [riderName, setRiderName] = useState("");
@@ -144,39 +141,6 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
             });
         }
         refreshTables();
-    };
-
-    const handlePinPress = (n: string) => {
-        setPinError(false);
-        if (posPin.length < 6) {
-            const newPin = posPin + n;
-            setPosPin(newPin);
-            if (newPin.length === 6) {
-                handleVerifyPin(newPin);
-            }
-        }
-    };
-
-    const handleVerifyPin = async (pin: string) => {
-        try {
-            const res = await fetch(`/api/menu/${shop_slug}/pos/verify-pin`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ pin })
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setStaffId(data.name);
-                setIsLocked(false);
-                setPosPin("");
-            } else {
-                setPinError(true);
-                setPosPin("");
-            }
-        } catch (err) {
-            setPinError(true);
-            setPosPin("");
-        }
     };
 
     const updateTableStatus = async (tableId: string, status: string) => {
@@ -363,45 +327,6 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
 
     if (isLoading) return <div className="h-screen flex items-center justify-center bg-[#0F1115]"><Loader2 className="h-10 w-10 animate-spin text-orange-500" /></div>;
 
-    if (isLocked) {
-        return (
-            <div className="h-screen bg-[#0F1115] flex flex-col items-center justify-center space-y-12 animate-in fade-in duration-500">
-                <div className="flex flex-col items-center gap-6">
-                    <div className={`h-24 w-24 ${pinError ? 'bg-red-500/20 text-red-500 animate-bounce' : 'bg-orange-500/10 text-orange-500'} rounded-[2.5rem] flex items-center justify-center shadow-2xl`}>
-                        <Lock className="h-10 w-10" />
-                    </div>
-                    <div className="text-center">
-                        <h2 className="text-3xl font-black text-white tracking-tighter uppercase">TAMJAI TERMINAL</h2>
-                        <p className={`${pinError ? 'text-red-500' : 'text-[#8E94A0]'} font-black text-[10px] mt-2 uppercase tracking-[0.3em]`}>
-                            {pinError ? "Invalid PIN. Try again." : "Enter Staff PIN to Unlock"}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="flex gap-4">
-                    {[0, 1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className={`h-4 w-4 rounded-full border-2 transition-all duration-300 ${posPin.length > i ? 'bg-orange-500 border-orange-500 scale-125 shadow-lg shadow-orange-500/50' : 'border-[#242933]'}`}></div>
-                    ))}
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 w-72">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                        <button key={n} onClick={() => handlePinPress(n.toString())} className="h-20 bg-[#1A1D23] border border-[#242933] rounded-[2rem] text-2xl font-black text-white hover:bg-[#242933] active:scale-90 transition-all shadow-xl">
-                            {n}
-                        </button>
-                    ))}
-                    <button onClick={() => setPosPin("")} className="h-20 bg-[#1A1D23]/50 rounded-[2rem] text-xs font-black text-red-500 uppercase tracking-widest hover:bg-red-500/10 transition-all">CLR</button>
-                    <button onClick={() => handlePinPress("0")} className="h-20 bg-[#1A1D23] border border-[#242933] rounded-[2rem] text-2xl font-black text-white hover:bg-[#242933] active:scale-90 transition-all">0</button>
-                    <div className="h-20 flex items-center justify-center">
-                        <div className="h-2 w-2 rounded-full bg-orange-500/20"></div>
-                    </div>
-                </div>
-
-                <p className="text-[#4E5460] text-[9px] font-black uppercase tracking-[0.4em] pt-8 border-t border-[#242933]/50 w-64 text-center">Protected Terminal Session</p>
-            </div>
-        );
-    }
-
     return (
         <div className="h-screen flex flex-col md:flex-row bg-[#0F1115] text-white overflow-hidden font-sans">
 
@@ -424,7 +349,7 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                         <Settings className="h-6 w-6" />
                     </button>
                 </div>
-                <button onClick={() => setIsLocked(true)} className="h-12 w-12 rounded-2xl flex items-center justify-center text-red-500/50 hover:text-red-500 hover:bg-red-500/5 transition-all">
+                <button className="h-12 w-12 rounded-2xl flex items-center justify-center text-red-500/50 hover:text-red-500 hover:bg-red-500/5 transition-all">
                     <Power className="h-6 w-6" />
                 </button>
             </div>
@@ -474,7 +399,7 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                             </div>
                             <div>
                                 <p className="text-[10px] font-black leading-none text-[#4E5460] uppercase tracking-widest">Operator</p>
-                                <p className="text-xs font-black mt-1">{staffId}</p>
+                                <p className="text-xs font-black mt-1">{staffName}</p>
                             </div>
                         </div>
                     </div>

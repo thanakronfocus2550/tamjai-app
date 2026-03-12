@@ -49,7 +49,7 @@ export const authOptions: NextAuthOptions = {
                     tenantId: user.tenantId,
                     shopSlug: user.tenant?.slug || null,
                     plan: user.tenant?.plan || "FREE",
-                    posPin: user.posPin || null,
+
                     trialEndsAt: user.tenant?.trialEndsAt || null,
                     isActive: user.tenant?.isActive ?? true,
                 };
@@ -59,25 +59,25 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async jwt({ token, user }: any) {
             if (user) {
-                token.role = user.role;
-                token.tenantId = user.tenantId;
-                token.shopSlug = user.shopSlug;
-                token.plan = user.plan || "FREE";
-                token.posPin = user.posPin;
-                token.trialEndsAt = user.trialEndsAt;
+                token.role = user.role ?? "TENANT_ADMIN";
+                token.tenantId = user.tenantId ?? null;
+                token.shopSlug = user.shopSlug ?? null;
+                token.plan = (user.plan ?? "FREE").toUpperCase();
+
+                token.trialEndsAt = user.trialEndsAt ?? null;
                 token.isActive = user.isActive ?? true;
             }
             return token;
         },
         async session({ session, token }: any) {
             if (token && session.user) {
-                (session.user as any).id = token.sub as string;
-                (session.user as any).role = token.role as string;
-                (session.user as any).tenantId = token.tenantId as string | null;
-                (session.user as any).shopSlug = token.shopSlug as string | null;
-                (session.user as any).plan = (token.plan as string | null) || "FREE";
-                (session.user as any).posPin = token.posPin as string | null;
-                (session.user as any).trialEndsAt = token.trialEndsAt;
+                (session.user as any).id = (token.sub as string) ?? "";
+                (session.user as any).role = (token.role as string) ?? "TENANT_ADMIN";
+                (session.user as any).tenantId = (token.tenantId as string | null) ?? null;
+                (session.user as any).shopSlug = (token.shopSlug as string | null) ?? null;
+                (session.user as any).plan = ((token.plan as string | null) ?? "FREE").toUpperCase();
+
+                (session.user as any).trialEndsAt = token.trialEndsAt ?? null;
                 (session.user as any).isActive = token.isActive ?? true;
             }
             return session;

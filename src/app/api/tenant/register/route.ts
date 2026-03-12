@@ -43,7 +43,6 @@ export async function POST(req: Request) {
             couponCode,
             addBefriendService,
             isTrial,
-            posPin
         } = validation.data;
 
         // Check if phone already exists
@@ -114,7 +113,7 @@ export async function POST(req: Request) {
                 name,
                 email: email.trim(),
                 password: hashedPassword,
-                posPin: posPin?.trim(),
+
                 role: "TENANT_ADMIN",
                 tenant: {
                     create: {

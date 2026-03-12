@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { use } from "react";
-import { Mail, Lock, LogIn, Store } from "lucide-react";
+import { Mail, Lock, LogIn, Store, Zap } from "lucide-react";
 
 function TenantLoginForm({ shop_slug }: { shop_slug: string }) {
     const router = useRouter();
@@ -120,6 +120,22 @@ function TenantLoginForm({ shop_slug }: { shop_slug: string }) {
                             {loading ? "กำลังเข้าระบบ..." : <><span>เข้าสู่ระบบ</span> <LogIn className="h-4 w-4 group-hover:scale-110 transition-transform" /></>}
                         </button>
                     </form>
+
+                    {shop_slug === "demo-shop" && (
+                        <div className="mt-6 border-t border-gray-100 pt-6">
+                            <p className="text-[10px] font-black uppercase text-gray-400 text-center mb-3 tracking-widest">Demo Access</p>
+                            <button
+                                onClick={() => {
+                                    setEmail("demo@tamjai.pro");
+                                    setPassword("demo1234");
+                                }}
+                                className="w-full rounded-2xl bg-gray-900 border border-gray-800 py-3 text-xs font-black text-white hover:bg-black transition-all shadow-lg shadow-gray-200 active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                <Zap className="h-3.5 w-3.5 text-brand-orange fill-current" />
+                                ใช้บัญชีทดลอง (Auto Fill)
+                            </button>
+                        </div>
+                    )}
 
                     <div className="mt-6 flex items-center justify-between">
                         <Link href={`/menu/${shop_slug}`} className="text-xs font-bold text-gray-400 hover:text-brand-orange transition-colors">

@@ -39,7 +39,7 @@ export async function POST(
     const body = await request.json();
 
     const session = await getServerSession(authOptions) as any;
-    if (!session || session.user.plan !== 'POS') {
+    if (!session || (session.user.plan !== 'POS' && shop_slug !== 'demo-shop')) {
         return NextResponse.json({ error: "Forbidden: POS plan required" }, { status: 403 });
     }
 
@@ -76,7 +76,7 @@ export async function PATCH(
     const body = await request.json(); // { tableId, status }
 
     const session = await getServerSession(authOptions) as any;
-    if (!session || session.user.plan !== 'POS') {
+    if (!session || (session.user.plan !== 'POS' && shop_slug !== 'demo-shop')) {
         return NextResponse.json({ error: "Forbidden: POS plan required" }, { status: 403 });
     }
 

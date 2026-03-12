@@ -761,8 +761,8 @@ export default function Home() {
               >
                 <div className="bg-white/10 backdrop-blur-3xl rounded-[3rem] p-4 border border-white/20 shadow-2xl">
                   <img
-                    src="https://images.unsplash.com/photo-1556742049-3ad443f02164?auto=format&fit=crop&q=80&w=800"
-                    alt="No Hardware Needed"
+                    src="https://images.unsplash.com/photo-1556742111-a301076d9d18?auto=format&fit=crop&q=80&w=800"
+                    alt="Modern POS on Tablet"
                     className="rounded-[2.5rem] w-full h-[400px] object-cover"
                   />
                 </div>
@@ -780,6 +780,14 @@ export default function Home() {
                 <p className="text-white/80 text-lg font-medium mb-10 leading-relaxed">
                   ไม่ต้องจ่ายเงินก้อนซื้อเครื่อง POS ราคาแพง เปลี่ยนทุกหน้าจอที่คุณมีให้เป็นเครื่องมือทำเงินระดับโปร แค่เปิดเว็บเราก็เริ่มขายได้ทันที
                 </p>
+
+                <Link
+                  href="/menu/demo-shop/pos"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-white px-8 py-4 mb-10 text-sm font-black text-brand-orange shadow-xl hover:bg-orange-50 transition-all active:scale-95 group"
+                >
+                  <ExternalLink className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  OPEN POS DEMO
+                </Link>
 
                 <div className="grid sm:grid-cols-2 gap-6">
                   {[

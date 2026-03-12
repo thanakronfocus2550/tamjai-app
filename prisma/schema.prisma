@@ -94,12 +94,12 @@ model User {
   tenantId      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  posPin        String?
+
   accounts      Account[]
   sessions      Session[]
   tenant        Tenant?   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId, posPin])
+
 }
 
 model Category {

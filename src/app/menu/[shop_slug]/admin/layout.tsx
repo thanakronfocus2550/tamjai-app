@@ -53,7 +53,7 @@ export default function StoreAdminLayout({
             }
 
             // Protection for POS pages, using case-insensitive check for userPlan
-            if (pathname.includes('/admin/pos') && userPlan !== 'POS' && !isSuper) {
+            if (pathname.includes('/admin/pos') && userPlan !== 'POS' && !isSuper && shop_slug !== 'demo-shop') {
                 router.replace(`/menu/${shop_slug}/admin`);
             }
         }
@@ -73,7 +73,7 @@ export default function StoreAdminLayout({
         { href: `/menu/${shop_slug}/admin`, label: "ออเดอร์ Live", icon: LayoutDashboard, exact: true },
         { href: `/menu/${shop_slug}/admin/menu`, label: "จัดการเมนู", icon: UtensilsCrossed },
         // Use case-insensitive check for userPlan
-        ...(userPlan === 'POS' ? [
+        ...((userPlan === 'POS' || shop_slug === 'demo-shop') ? [
             { href: `/menu/${shop_slug}/admin/pos`, label: "🔥 ระบบ POS", icon: LayoutDashboard },
             { href: `/menu/${shop_slug}/admin/qr`, label: "จัดการโต๊ะ & QR", icon: QrCode }
         ] : []),
@@ -109,13 +109,13 @@ export default function StoreAdminLayout({
                     <div>
                         <div className="flex items-center gap-2">
                             <h1 className="font-bold text-gray-900 leading-none text-sm">{storeName}</h1>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm ${userPlan === 'POS'
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm ${(userPlan === 'POS' || shop_slug === 'demo-shop')
                                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400'
                                 : userPlan === 'PRO'
                                     ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400'
                                     : 'bg-gray-100 text-gray-500 border-gray-200'
                                 }`}>
-                                {userPlan === 'POS' ? '🚀 POS Ultra' : userPlan === 'PRO' ? '💎 PRO Member' : 'FREE Trial'}
+                                {(userPlan === 'POS' || shop_slug === 'demo-shop') ? '🚀 POS Ultra' : userPlan === 'PRO' ? '💎 PRO Member' : 'FREE Trial'}
                             </span>
                             {isSuspended && (
                                 <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-100 animate-pulse">

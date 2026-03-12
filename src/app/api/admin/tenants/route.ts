@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
             include: {
                 users: {
                     where: { role: "TENANT_ADMIN" },
-                    select: { name: true, email: true, posPin: true }
+                    select: { name: true, email: true }
                 },
                 _count: {
                     select: { orders: true }
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
             slug: t.slug,
             owner: t.users[0]?.name || "N/A",
             email: t.users[0]?.email || "N/A",
-            posPin: t.users[0]?.posPin || "Not Set",
+
             phone: "-", // simplified
             package: t.plan || "FREE",
             status: t.isActive ? "Active" : "Inactive",

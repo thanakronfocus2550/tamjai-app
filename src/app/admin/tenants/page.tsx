@@ -607,10 +607,7 @@ export default function TenantsPage() {
                                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">อีเมลติดต่อ</p>
                                         <p className="font-bold text-gray-900">{viewingTenant.email}</p>
                                     </div>
-                                    <div className="rounded-2xl bg-orange-50 border border-orange-100 p-5">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-brand-orange mb-1">POS PIN (รหัสพนักงาน)</p>
-                                        <p className="font-black text-brand-orange text-xl tracking-[0.2em]">{viewingTenant.posPin}</p>
-                                    </div>
+
                                     <div className="rounded-2xl bg-gray-50 border border-gray-100 p-5">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">ชื่อร้านค้า</p>
                                         <p className="font-bold text-gray-900">{viewingTenant.name}</p>

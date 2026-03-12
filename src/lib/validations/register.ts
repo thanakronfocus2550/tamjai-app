@@ -21,7 +21,7 @@ export const registerSchema = z.object({
     slipBase64: z.string().optional(),
     addBefriendService: z.boolean().optional(),
     isTrial: z.boolean().optional(),
-    posPin: z.string().regex(/^[0-9]{6}$/, { message: "PIN ต้องเป็นตัวเลข 6 หลัก" }).optional(),
+
     extra_info: z.string().max(0, { message: "Bot detected" }).optional(), // Honeypot
 });
 

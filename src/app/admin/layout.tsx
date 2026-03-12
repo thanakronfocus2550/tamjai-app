@@ -31,10 +31,10 @@ export default function AdminLayout({
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const userName = session?.user?.name || "Super Admin";
-  const userEmail = session?.user?.email || "admin@tamjai.pro";
-  const userRole = session?.user?.role || "GUEST";
-  const userPlan = (session?.user?.plan || "FREE").toUpperCase();
+  const userName = session?.user?.name ?? "Super Admin";
+  const userEmail = session?.user?.email ?? "admin@tamjai.pro";
+  const userRole = session?.user?.role ?? "GUEST";
+  const userPlan = ((session?.user?.plan as string) ?? "FREE").toUpperCase();
 
   React.useEffect(() => {
     if (status === "loading") return;

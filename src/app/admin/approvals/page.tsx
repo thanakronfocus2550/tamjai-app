@@ -26,13 +26,14 @@ import {
 } from "lucide-react";
 
 export default function ApprovalsPage() {
-    const [activeTab, setActiveTab] = useState<'Pending' | 'Approved' | 'Rejected' | 'All'>('Pending');
+    const [activeTab, setActiveTab] = useState<'PENDING' | 'APPROVED' | 'REJECTED' | 'ALL'>('PENDING');
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedApproval, setSelectedApproval] = useState<any>(null);
     const [rejectionTarget, setRejectionTarget] = useState<any>(null);
     const [rejectionReason, setRejectionReason] = useState("");
     const [loading, setLoading] = useState(true);
     const [approvals, setApprovals] = useState<any[]>([]);
+    const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
     useEffect(() => {
         fetchApprovals();
@@ -56,6 +57,7 @@ export default function ApprovalsPage() {
     };
 
     const handleAction = async (id: string, status: 'APPROVED' | 'REJECTED', reason?: string) => {
+        setIsSubmittingAction(true);
         try {
             const res = await fetch("/api/admin/approvals", {
                 method: 'PATCH',
@@ -75,11 +77,13 @@ export default function ApprovalsPage() {
         } catch (err) {
             console.error("Error performing action:", err);
             alert("เกิดข้อผิดพลาดในการดำเนินการ");
+        } finally {
+            setIsSubmittingAction(false);
         }
     };
 
     const filteredApprovals = approvals.filter(ap =>
-        (activeTab === 'All' ? true : ap.status === activeTab) &&
+        (activeTab === 'ALL' ? true : ap.status.toUpperCase() === activeTab) &&
         (searchQuery ? ap.refId.toLowerCase().includes(searchQuery.toLowerCase()) || ap.tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) : true)
     );
 
@@ -125,10 +129,10 @@ export default function ApprovalsPage() {
                     </div>
                     <div className="flex bg-gray-100 p-1 rounded-2xl gap-1">
                         {[
-                            { id: 'Pending', label: 'รอตรวจสอบ', count: 2 },
-                            { id: 'Approved', label: 'อนุมัติแล้ว', count: 124 },
-                            { id: 'Rejected', label: 'ถูกปฏิเสธ', count: 5 },
-                            { id: 'All', label: 'ทั้งหมด', count: null }
+                            { id: 'PENDING', label: 'รอตรวจสอบ', count: approvals.filter(a => a.status === 'PENDING').length },
+                            { id: 'APPROVED', label: 'อนุมัติแล้ว', count: approvals.filter(a => a.status === 'APPROVED').length },
+                            { id: 'REJECTED', label: 'ถูกปฏิเสธ', count: approvals.filter(a => a.status === 'REJECTED').length },
+                            { id: 'ALL', label: 'ทั้งหมด', count: null }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -178,25 +182,27 @@ export default function ApprovalsPage() {
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold
-                                             ${ap.status === 'Pending' ? 'bg-amber-50 text-amber-600 border border-amber-200/50' :
-                                                ap.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50' :
+                                             ${ap.status.toUpperCase() === 'PENDING' ? 'bg-amber-50 text-amber-600 border border-amber-200/50' :
+                                                ap.status.toUpperCase() === 'APPROVED' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/50' :
                                                     'bg-red-50 text-red-600 border border-red-200/50'}
                                          `}>
                                             {ap.status}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        {ap.status === 'Pending' ? (
+                                        {ap.status.toUpperCase() === 'PENDING' ? (
                                             <div className="flex justify-end gap-2">
                                                 <button
                                                     onClick={() => handleApprove(ap.id)}
-                                                    className="p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95" title="อนุมัติเงิน"
+                                                    disabled={isSubmittingAction}
+                                                    className="p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50" title="อนุมัติเงิน"
                                                 >
-                                                    <CheckCircle2 className="h-5 w-5" />
+                                                    {isSubmittingAction ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                                                 </button>
                                                 <button
                                                     onClick={() => setRejectionTarget(ap)}
-                                                    className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-95" title="ปฏิเสธสลิป"
+                                                    disabled={isSubmittingAction}
+                                                    className="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-500 hover:text-white transition-all shadow-sm active:scale-95 disabled:opacity-50" title="ปฏิเสธสลิป"
                                                 >
                                                     <XCircle className="h-5 w-5" />
                                                 </button>
@@ -204,7 +210,7 @@ export default function ApprovalsPage() {
                                         ) : (
                                             <div className="text-right">
                                                 <p className="text-[10px] font-black text-gray-400 uppercase">{ap.processedBy} • {ap.processedAt}</p>
-                                                {ap.status === 'Rejected' && <p className="text-[10px] font-bold text-red-500 mt-1 italic">Reason: {ap.reason}</p>}
+                                                {ap.status.toUpperCase() === 'REJECTED' && <p className="text-[10px] font-bold text-red-500 mt-1 italic">Reason: {ap.reason}</p>}
                                             </div>
                                         )}
                                     </td>
@@ -247,11 +253,14 @@ export default function ApprovalsPage() {
                                     <div className="rounded-3xl bg-gray-100 overflow-hidden relative group h-full flex items-center justify-center">
                                         {selectedApproval.slipUrl ? (
                                             <img
-                                                src={selectedApproval.slipUrl}
+                                                src={selectedApproval.slipUrl.startsWith('data:') || selectedApproval.slipUrl.startsWith('http') || selectedApproval.slipUrl.startsWith('/') ? selectedApproval.slipUrl : `data:image/png;base64,${selectedApproval.slipUrl}`}
                                                 alt="Slip"
                                                 className="w-full h-full object-contain"
                                                 onError={(e) => {
-                                                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x800?text=Image+Load+Failed';
+                                                    const target = e.target as HTMLImageElement;
+                                                    if (!target.src.includes('placehold.co')) {
+                                                        target.src = 'https://placehold.co/600x800?text=Image+Load+Failed';
+                                                    }
                                                 }}
                                             />
                                         ) : (
@@ -435,9 +444,10 @@ export default function ApprovalsPage() {
                                     </button>
                                     <button
                                         onClick={handleReject}
-                                        className="flex-1 rounded-2xl bg-red-600 py-3 text-sm font-black text-white hover:bg-red-700 transition-all shadow-lg shadow-red-100"
+                                        disabled={isSubmittingAction || !rejectionReason}
+                                        className="flex-1 rounded-2xl bg-red-600 py-3 text-sm font-black text-white hover:bg-red-700 transition-all shadow-lg shadow-red-100 disabled:opacity-50"
                                     >
-                                        ยืนยันการปฏิเสธ
+                                        {isSubmittingAction ? "กำลังดำเนินการ..." : "ยืนยันการปฏิเสธ"}
                                     </button>
                                 </div>
                             </div>

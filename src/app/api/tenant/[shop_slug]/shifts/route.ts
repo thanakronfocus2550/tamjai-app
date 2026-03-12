@@ -14,7 +14,7 @@ export async function GET(
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        if (session.user.plan !== 'POS') {
+        if (session.user.plan !== 'POS' && shop_slug !== 'demo-shop') {
             return NextResponse.json({ message: "Forbidden: POS plan required" }, { status: 403 });
         }
 
@@ -55,7 +55,7 @@ export async function POST(
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        if (session.user.plan !== 'POS') {
+        if (session.user.plan !== 'POS' && shop_slug !== 'demo-shop') {
             return NextResponse.json({ message: "Forbidden: POS plan required" }, { status: 403 });
         }
 
