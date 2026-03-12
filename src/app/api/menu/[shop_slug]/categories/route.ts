@@ -60,9 +60,17 @@ export async function POST(
             return NextResponse.json({ error: "Shop not found" }, { status: 404 });
         }
 
+        const slug = name
+            .toLowerCase()
+            .trim()
+            .replace(/[^\u0E00-\u0E7F\w\s-]/g, "")
+            .replace(/[\s_-]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+
         const category = await prisma.category.create({
             data: {
                 name,
+                slug: slug || `cat-${Date.now()}`,
                 order: order || 0,
                 tenantId: tenant.id
             }

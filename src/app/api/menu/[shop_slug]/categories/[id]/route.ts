@@ -18,10 +18,21 @@ export async function PATCH(
 
         const { name, order } = await req.json();
 
+        let slug;
+        if (name) {
+            slug = name
+                .toLowerCase()
+                .trim()
+                .replace(/[^\u0E00-\u0E7F\w\s-]/g, "")
+                .replace(/[\s_-]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+            if (!slug) slug = `cat-${Date.now()}`;
+        }
+
         const category = await prisma.category.update({
             where: { id },
             data: {
-                ...(name && { name }),
+                ...(name && { name, slug }),
                 ...(order !== undefined && { order })
             }
         });
