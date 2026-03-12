@@ -122,7 +122,14 @@ export default function RegisterPage() {
 
     const nextStep = () => {
         if (step === 1 && !validateStep1()) return;
-        if (step < 4) setStep(step + 1);
+        if (step === 2 && !formData.subdomain) {
+            setFieldErrors({ subdomain: "กรุณาระบุ URL ร้านค้า" });
+            return;
+        }
+        if (step < 4) {
+            setFieldErrors({});
+            setStep(step + 1);
+        }
     };
 
     const submitForm = async () => {
@@ -134,7 +141,8 @@ export default function RegisterPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    name: formData.fullName,
+                    fullName: formData.fullName,
+                    nickname: formData.nickname,
                     shopName: formData.storeName,
                     shopSlug: formData.subdomain,
                     email: formData.email,

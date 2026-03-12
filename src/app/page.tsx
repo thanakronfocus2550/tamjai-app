@@ -711,27 +711,34 @@ export default function Home() {
                   <div className="inline-flex items-center gap-2 text-orange-500 font-black text-xs uppercase tracking-[0.2em] mb-6">
                     <LayoutPanelTop className="h-4 w-4" /> Professional POS
                   </div>
-                  <h3 className="text-3xl md:text-4xl font-black text-white mb-4">Orange <span className="text-orange-500">Terminal</span></h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-3xl md:text-4xl font-black text-white">Orange <span className="text-orange-500">Terminal</span></h3>
+                    <div className="bg-orange-500/20 text-orange-500 text-[10px] font-black px-3 py-1.5 rounded-full border border-orange-500/30 animate-pulse">
+                      ทดลองใช้ฟรี 7 วัน
+                    </div>
+                  </div>
                   <p className="text-gray-400 font-medium mb-8 leading-relaxed">
                     ชุดซอฟต์แวร์ขายหน้าร้านระดับโปร สำหรับพนักงานและแคชเชียร์ เน้นความเร็ว จัดการผังโต๊ะ และระบบรับเงินสด/PromptPay
                   </p>
 
-                  <div className="space-y-4 mb-10 flex-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 mb-10 flex-1">
                     {[
-                      "Advanced Table Management",
-                      "Flash-Speed Checkout",
-                      "Dynamic PromptPay QR",
-                      "Shift & Money Control"
+                      { text: "Advanced Table Management", icon: LayoutPanelTop },
+                      { text: "Flash-Speed Checkout", icon: Zap },
+                      { text: "Dynamic PromptPay QR", icon: QrCode },
+                      { text: "Shift & Money Control", icon: ShieldCheck }
                     ].map((f, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <Zap className="h-5 w-5 text-orange-500" />
-                        <span className="font-bold text-sm text-gray-300">{f}</span>
+                      <div key={i} className="flex items-center gap-3 group/item">
+                        <div className="h-8 w-8 rounded-lg bg-orange-500/10 flex items-center justify-center group-hover/item:bg-orange-500/20 transition-colors">
+                          <f.icon className="h-4 w-4 text-orange-500" />
+                        </div>
+                        <span className="font-bold text-sm text-gray-300 group-hover/item:text-white transition-colors">{f.text}</span>
                       </div>
                     ))}
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <Link href="/menu/demo-shop/admin/pos" target="_blank" className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-8 py-4 text-white font-black uppercase tracking-widest text-sm hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 hover:-translate-y-1">
+                    <Link href="/menu/demo-shop/admin" target="_blank" className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-orange-500 px-8 py-4 text-white font-black uppercase tracking-widest text-sm hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 hover:-translate-y-1">
                       Open POS Demo <ExternalLink className="h-4 w-4" />
                     </Link>
                   </div>
