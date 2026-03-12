@@ -350,11 +350,11 @@ export default function MenuManagePage({ params }: { params: Promise<{ shop_slug
             {/* Category Manager */}
             {showCategoryMgr && (
                 <div className="bg-purple-50/50 border border-purple-100 rounded-2xl p-4 space-y-3">
-                    <p className="font-bold text-purple-900 text-sm flex items-center gap-2">หมวดหมู่ทั้งหมด</p>
+                    <p className="font-bold text-black text-sm flex items-center gap-2">หมวดหมู่ทั้งหมด</p>
                     <div className="space-y-2">
                         {categories.map(cat => (
                             <div key={cat.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-purple-100">
-                                <span className="text-sm font-medium text-gray-700">{cat.name}</span>
+                                <span className="text-sm font-medium text-black">{cat.name}</span>
                                 <button onClick={() => deleteCategory(cat.id)} className="text-gray-300 hover:text-red-500 p-1">
                                     <Trash2 className="h-4 w-4" />
                                 </button>

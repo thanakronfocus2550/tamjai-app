@@ -123,7 +123,11 @@ export default function StoreAdminLayout({
                             )}
                         </div>
                         <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider flex items-center gap-1">
-                            หมดอายุ: <span className="font-bold text-orange-500">30 พ.ย. 2024</span>
+                            {((session?.user as any)?.trialEndsAt) ? (
+                                <>หมดอายุ (Trial): <span className="font-bold text-orange-500">{new Date((session?.user as any).trialEndsAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}</span></>
+                            ) : (
+                                <>สถานะแผน: <span className="font-bold text-emerald-500">Active</span></>
+                            )}
                         </p>
                     </div>
                 </div>

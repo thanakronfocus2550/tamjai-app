@@ -54,7 +54,9 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
     const baseDeliveryFee = tenantSettings?.deliveryFee !== undefined ? Number(tenantSettings.deliveryFee) : 30;
     const deliveryFee = orderMode === "delivery" ? baseDeliveryFee : 0;
     const total = Math.max(0, subtotal + deliveryFee - promoDiscount);
-    const isFormValid = !!(name.trim() && phone.trim() && (orderMode === "pickup" || address.trim()));
+    const isFormValid = orderMode === "dinein"
+        ? cart.length > 0
+        : !!(name.trim() && phone.trim() && (orderMode === "pickup" || address.trim()));
 
     // AI Upsell Logic
     React.useEffect(() => {
@@ -162,24 +164,31 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                 <div className="flex-1 overflow-y-auto pb-32 space-y-4 p-4">
 
                     {/* Customer info */}
-                    <section className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">ข้อมูลผู้รับ</p>
-                        <input type="text" placeholder="ชื่อ-นามสกุล *" value={name} onChange={e => setName(e.target.value)}
-                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
-                        <input type="tel" placeholder="เบอร์โทรศัพท์ *" value={phone} onChange={e => setPhone(e.target.value)}
-                            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange-400 transition-all font-medium" />
+                    {orderMode !== "dinein" ? (
+                        <section className="bg-white border border-gray-100 rounded-2xl p-4 space-y-3">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">ข้อมูลผู้รับ</p>
+                            <input type="text" placeholder="ชื่อ-นามสกุล *" value={name} onChange={e => setName(e.target.value)}
+                                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all" />
+                            <input type="tel" placeholder="เบอร์โทรศัพท์ *" value={phone} onChange={e => setPhone(e.target.value)}
+                                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:border-orange-400 transition-all font-medium" />
 
-                        {orderMode === "delivery" && (
-                            <div className="flex items-start gap-2 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2.5">
-                                <MapPin className="h-4 w-4 text-orange-500 mt-1 shrink-0" />
-                                <textarea
-                                    placeholder="ที่อยู่จัดส่ง (บ้านเลขที่, ซอย, ถนน, เขต) *"
-                                    value={address} onChange={e => setAddress(e.target.value)} rows={3}
-                                    className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none resize-none font-medium"
-                                />
-                            </div>
-                        )}
-                    </section>
+                            {orderMode === "delivery" && (
+                                <div className="flex items-start gap-2 bg-orange-50 border border-orange-100 rounded-xl px-3 py-2.5">
+                                    <MapPin className="h-4 w-4 text-orange-500 mt-1 shrink-0" />
+                                    <textarea
+                                        placeholder="ที่อยู่จัดส่ง (บ้านเลขที่, ซอย, ถนน, เขต) *"
+                                        value={address} onChange={e => setAddress(e.target.value)} rows={3}
+                                        className="flex-1 bg-transparent text-sm text-gray-900 placeholder-gray-400 outline-none resize-none font-medium"
+                                    />
+                                </div>
+                            )}
+                        </section>
+                    ) : (
+                        <div className="bg-orange-50/50 border border-orange-100 rounded-2xl p-4 text-center">
+                            <p className="text-sm font-bold text-orange-600">สั่งทานที่โต๊ะ {tableNumber}</p>
+                            <p className="text-xs text-gray-500 mt-1">ไม่ต้องกรอกข้อมูลผู้รับ ดำเนินการชำระเงินได้ทันที</p>
+                        </div>
+                    )}
 
                     {/* Order Mode - Re-enabled Pickup & Added Dine-in */}
                     <div className="flex bg-gray-100 p-1.5 rounded-2xl gap-1">

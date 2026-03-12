@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
-import { ChevronLeft, Printer, QrCode, Download, Loader2, Info } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, Printer, QrCode, Download, Loader2, Info, Plus, Minus } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
-export default function QRManagementPage({ params }: { params: Promise<{ shop_slug: string }> }) {
-    const { shop_slug } = use(params);
+export default function QRManagementPage() {
+    const params = useParams();
+    const shop_slug = params.shop_slug as string;
     const [tables, setTables] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [baseUrl, setBaseUrl] = useState("");
@@ -55,6 +56,47 @@ export default function QRManagementPage({ params }: { params: Promise<{ shop_sl
                         <p className="text-gray-500 font-medium mt-1">Generate and print unique QR codes for your tables.</p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <div className="flex bg-white border border-gray-200 rounded-2xl p-1 shadow-sm">
+                            <button
+                                onClick={async () => {
+                                    if (tables.length === 0) return;
+                                    const lastTable = tables[tables.length - 1];
+                                    if (confirm(`Delete Table ${lastTable.number}?`)) {
+                                        try {
+                                            const res = await fetch(`/api/menu/${shop_slug}/tables/${lastTable.id}`, { method: 'DELETE' });
+                                            if (res.ok) setTables(prev => prev.slice(0, -1));
+                                        } catch (err) { console.error(err); }
+                                    }
+                                }}
+                                className="h-10 px-4 rounded-xl hover:bg-red-50 text-red-500 transition-colors flex items-center justify-center"
+                                title="Remove last table"
+                            >
+                                <Minus className="h-5 w-5" />
+                            </button>
+                            <div className="w-12 flex items-center justify-center font-black text-gray-900 border-x border-gray-100">
+                                {tables.length}
+                            </div>
+                            <button
+                                onClick={async () => {
+                                    const nextNumber = tables.length > 0 ? Math.max(...tables.map(t => parseInt(t.number))) + 1 : 1;
+                                    try {
+                                        const res = await fetch(`/api/menu/${shop_slug}/tables`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ number: nextNumber, capacity: 4 })
+                                        });
+                                        if (res.ok) {
+                                            const newTable = await res.json();
+                                            setTables(prev => [...prev, newTable]);
+                                        }
+                                    } catch (err) { console.error(err); }
+                                }}
+                                className="h-10 px-4 rounded-xl hover:bg-emerald-50 text-emerald-600 transition-colors flex items-center justify-center"
+                                title="Add a table"
+                            >
+                                <Plus className="h-5 w-5" />
+                            </button>
+                        </div>
                         <button
                             onClick={handlePrint}
                             className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-orange-500/20 transition-all flex items-center gap-2"
