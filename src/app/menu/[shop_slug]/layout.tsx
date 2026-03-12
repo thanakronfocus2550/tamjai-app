@@ -8,16 +8,21 @@ type Props = {
 };
 
 async function getStoreData(slug: string) {
-    const tenant = await prisma.tenant.findUnique({
-        where: { slug },
-        select: {
-            id: true,
-            name: true,
-            isActive: true,
-            themeColor: true,
-        }
-    });
-    return tenant;
+    try {
+        const tenant = await prisma.tenant.findUnique({
+            where: { slug },
+            select: {
+                id: true,
+                name: true,
+                isActive: true,
+                themeColor: true,
+            }
+        });
+        return tenant;
+    } catch (err) {
+        console.error("Database connection error in MenuLayout:", err);
+        return null;
+    }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ shop_slug: string }> }): Promise<Metadata> {

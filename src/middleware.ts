@@ -45,13 +45,22 @@ export async function middleware(req: NextRequest) {
             return NextResponse.redirect(url);
         }
 
-        // Access check: Must be owner or Super Admin
+        // Access check: Must be owner, Staff, or Super Admin
         const isSuper = token.role === "SUPER_ADMIN";
         const isOwner = token.shopSlug === shopSlug;
+        const isStaff = token.role === "STAFF" && isOwner;
 
-        if (!isSuper && !isOwner) {
+        if (!isSuper && !isOwner && !isStaff) {
             console.warn(`Denied access to ${shopSlug} for user ${token.email}`);
             return NextResponse.redirect(new URL("/", req.url));
+        }
+
+        // Plan check for POS terminal
+        if (pathname.includes("/admin/pos")) {
+            const plan = (token.plan || "FREE").toUpperCase();
+            if (!isSuper && plan !== "POS") {
+                return NextResponse.redirect(new URL(`/menu/${shopSlug}/admin?error=pos_plan_required`, req.url));
+            }
         }
     }
 
