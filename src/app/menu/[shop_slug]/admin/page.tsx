@@ -142,14 +142,15 @@ export default function StoreAdminPage({ params }: { params: Promise<{ shop_slug
         }
     };
 
-    const filtered = filter === "all" ? orders : orders.filter(o => o.status === filter);
+    const ordersArray = Array.isArray(orders) ? orders : [];
+    const filtered = filter === "all" ? ordersArray : ordersArray.filter(o => o.status === filter);
     const counts = {
-        new: orders.filter(o => o.status === "new").length,
-        prepping: orders.filter(o => o.status === "prepping").length,
-        ready: orders.filter(o => o.status === "ready").length,
-        completed: orders.filter(o => o.status === "completed").length,
+        new: ordersArray.filter(o => o.status === "new").length,
+        prepping: ordersArray.filter(o => o.status === "prepping").length,
+        ready: ordersArray.filter(o => o.status === "ready").length,
+        completed: ordersArray.filter(o => o.status === "completed").length,
     };
-    const todayRevenue = orders.reduce((s, o) => s + Number(o.totalAmount), 0);
+    const todayRevenue = ordersArray.reduce((s, o) => s + Number(o.totalAmount), 0);
 
     return (
         <div className="p-4 space-y-4 max-w-md mx-auto">

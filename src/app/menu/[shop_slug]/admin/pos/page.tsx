@@ -92,13 +92,19 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                 const tabData = await tabRes.json();
                 const shiftData = await shiftRes.json();
 
-                setProducts(prodData.map((p: any) => ({ ...p, price: Number(p.price) })));
-                setCategories(catData);
-                setSettings(setData);
-                setTables(tabData);
-                setCurrentShift(shiftData);
+                if (Array.isArray(prodData)) {
+                    setProducts(prodData.map((p: any) => ({ ...p, price: Number(p.price) })));
+                } else {
+                    setProducts([]);
+                }
 
-                if (!shiftData) {
+                if (Array.isArray(catData)) setCategories(catData);
+                if (setData && !setData.error) setSettings(setData);
+                if (Array.isArray(tabData)) setTables(tabData);
+
+                if (shiftData && !shiftData.error) {
+                    setCurrentShift(shiftData);
+                } else {
                     setShiftAction("OPEN");
                     setShowShiftModal(true);
                 }
@@ -142,10 +148,10 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
 
     const handlePinPress = (n: string) => {
         setPinError(false);
-        if (posPin.length < 4) {
+        if (posPin.length < 6) {
             const newPin = posPin + n;
             setPosPin(newPin);
-            if (newPin.length === 4) {
+            if (newPin.length === 6) {
                 handleVerifyPin(newPin);
             }
         }
@@ -372,7 +378,7 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                 </div>
 
                 <div className="flex gap-4">
-                    {[0, 1, 2, 3].map(i => (
+                    {[0, 1, 2, 3, 4, 5].map(i => (
                         <div key={i} className={`h-4 w-4 rounded-full border-2 transition-all duration-300 ${posPin.length > i ? 'bg-orange-500 border-orange-500 scale-125 shadow-lg shadow-orange-500/50' : 'border-[#242933]'}`}></div>
                     ))}
                 </div>

@@ -21,6 +21,7 @@ export default function RegisterPage() {
         isTrial: true, // Default to trial for now
         couponCode: "",
         addBefriendService: false, // New service option
+        posPin: "", // 6-digit POS PIN
         extra_info: "", // Honeypot field
     });
 
@@ -152,6 +153,7 @@ export default function RegisterPage() {
                     plan: formData.plan,
                     addBefriendService: formData.addBefriendService,
                     isTrial: formData.isTrial,
+                    posPin: formData.plan === 'pos' ? formData.posPin : undefined,
                     slipBase64: (formData.plan === 'pro' || formData.plan === 'pos') && !formData.isTrial ? slipBase64 : undefined,
                     extra_info: formData.extra_info, // Honeypot data
                 }),
@@ -612,6 +614,26 @@ export default function RegisterPage() {
                                             {/* POS Slip Upload (Only when NOT TRIAL) */}
                                             {formData.plan === 'pos' && !formData.isTrial && (
                                                 <div className="mt-4 pt-4 border-t border-brand-orange/20 space-y-4">
+                                                    {/* PIN Setup (Crucial for POS) */}
+                                                    <div className="bg-orange-500/10 rounded-2xl p-4 border border-orange-500/20">
+                                                        <label className="block text-[10px] font-black uppercase tracking-widest text-orange-600 mb-2 pl-1">ตั้งวรหัสผ่านเครื่อง POS (6 หลัก)</label>
+                                                        <div className="relative">
+                                                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-400" />
+                                                            <input
+                                                                type="text"
+                                                                maxLength={6}
+                                                                placeholder="เช่น 123456"
+                                                                value={formData.posPin}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                                                                    updateForm("posPin", val);
+                                                                }}
+                                                                className="w-full rounded-xl border border-orange-200 bg-white py-2.5 pl-10 pr-4 text-sm font-black text-brand-orange outline-none tracking-[0.5em]"
+                                                            />
+                                                        </div>
+                                                        <p className="text-[9px] text-orange-400 mt-2 font-medium">* พนักงานจะใช้รหัสนี้เพื่อเข้าใช้งานหน้า POS</p>
+                                                    </div>
+
                                                     <div className="bg-white rounded-xl p-4 border border-orange-100 shadow-sm">
                                                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">ช่องทางชำระเงิน</p>
                                                         <div className="flex items-center gap-3">
@@ -646,6 +668,29 @@ export default function RegisterPage() {
                                                                 <p className="text-[10px] text-gray-400">รองรับ JPG, PNG เท่านั้น</p>
                                                             </>
                                                         )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* POS PIN for Trial too */}
+                                            {formData.plan === 'pos' && formData.isTrial && (
+                                                <div className="mt-4 pt-4 border-t border-brand-orange/20">
+                                                    <div className="bg-orange-500/10 rounded-2xl p-4 border border-orange-500/20">
+                                                        <label className="block text-[10px] font-black uppercase tracking-widest text-orange-600 mb-2 pl-1">ตั้งรหัสผ่านเครื่อง POS (6 หลัก)</label>
+                                                        <div className="relative">
+                                                            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-orange-400" />
+                                                            <input
+                                                                type="text"
+                                                                maxLength={6}
+                                                                placeholder="123456"
+                                                                value={formData.posPin}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+                                                                    updateForm("posPin", val);
+                                                                }}
+                                                                className="w-full rounded-xl border border-orange-200 bg-white py-2.5 pl-10 pr-4 text-sm font-black text-brand-orange outline-none tracking-[0.5em]"
+                                                            />
+                                                        </div>
+                                                        <p className="text-[9px] text-orange-400 mt-2 font-medium">* ใช้สำหรับปลดระบบ POS หน้าร้าน</p>
                                                     </div>
                                                 </div>
                                             )}

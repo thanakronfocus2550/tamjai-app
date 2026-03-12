@@ -20,7 +20,7 @@ export default function StoreAdminLayout({
     const router = useRouter();
     const { data: session, status } = useSession();
 
-    const userPlan = (session?.user as any)?.plan || "FREE";
+    const userPlan = ((session?.user as any)?.plan || "FREE").toUpperCase();
 
     React.useEffect(() => {
         if (status === "loading") return;
@@ -51,7 +51,7 @@ export default function StoreAdminLayout({
                 return;
             }
 
-            // Protection for POS pages
+            // Protection for POS pages, using case-insensitive check for userPlan
             if (pathname.includes('/admin/pos') && userPlan !== 'POS') {
                 router.replace(`/menu/${shop_slug}/admin`);
             }
@@ -67,9 +67,11 @@ export default function StoreAdminLayout({
         router.push(`/menu/${shop_slug}/admin/login`);
     };
 
+    // Ensure nav array is always an array before mapping
     const nav = [
         { href: `/menu/${shop_slug}/admin`, label: "ออเดอร์ Live", icon: LayoutDashboard, exact: true },
         { href: `/menu/${shop_slug}/admin/menu`, label: "จัดการเมนู", icon: UtensilsCrossed },
+        // Use case-insensitive check for userPlan
         ...(userPlan === 'POS' ? [
             { href: `/menu/${shop_slug}/admin/pos`, label: "🔥 ระบบ POS", icon: LayoutDashboard },
             { href: `/menu/${shop_slug}/admin/qr`, label: "จัดการโต๊ะ & QR", icon: QrCode }
@@ -83,6 +85,9 @@ export default function StoreAdminLayout({
     if (status === "loading") {
         return <div className="min-h-screen bg-gray-50 flex items-center justify-center font-bold text-orange-500">กำลังโหลด...</div>;
     }
+
+    // Defensive check for API errors in children and for inactive shops
+    const isSuspended = (session?.user as any)?.isActive === false;
 
     if (pathname.endsWith('/admin/login')) {
         return <>{children}</>;
@@ -111,6 +116,11 @@ export default function StoreAdminLayout({
                                 }`}>
                                 {userPlan} Plan
                             </span>
+                            {isSuspended && (
+                                <span className="px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-100 animate-pulse">
+                                    Pending Approval
+                                </span>
+                            )}
                         </div>
                         <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider flex items-center gap-1">
                             หมดอายุ: <span className="font-bold text-orange-500">30 พ.ย. 2024</span>
