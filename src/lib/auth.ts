@@ -49,7 +49,7 @@ export const authOptions: NextAuthOptions = {
                     tenantId: user.tenantId,
                     shopSlug: user.tenant?.slug || null,
                     plan: user.tenant?.plan || "FREE",
-
+                    posPin: user.posPin || "",
                     trialEndsAt: user.tenant?.trialEndsAt || null,
                     isActive: user.tenant?.isActive ?? true,
                 };
@@ -63,7 +63,7 @@ export const authOptions: NextAuthOptions = {
                 token.tenantId = user.tenantId ?? null;
                 token.shopSlug = user.shopSlug ?? null;
                 token.plan = (user.plan ?? "FREE").toUpperCase();
-
+                token.posPin = user.posPin ?? "";
                 token.trialEndsAt = user.trialEndsAt ?? null;
                 token.isActive = user.isActive ?? true;
             }
@@ -76,7 +76,7 @@ export const authOptions: NextAuthOptions = {
                 (session.user as any).tenantId = (token.tenantId as string | null) ?? null;
                 (session.user as any).shopSlug = (token.shopSlug as string | null) ?? null;
                 (session.user as any).plan = ((token.plan as string | null) ?? "FREE").toUpperCase();
-
+                (session.user as any).posPin = (token.posPin as string | null) ?? "";
                 (session.user as any).trialEndsAt = token.trialEndsAt ?? null;
                 (session.user as any).isActive = token.isActive ?? true;
             }

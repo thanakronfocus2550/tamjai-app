@@ -20,7 +20,7 @@ export default function StoreAdminLayout({
     const router = useRouter();
     const { data: session, status } = useSession();
 
-    const userPlan = ((session?.user as any)?.plan || "FREE").toUpperCase();
+    const userPlan = (session?.user?.plan ?? "FREE").toUpperCase();
 
     React.useEffect(() => {
         if (status === "loading") return;

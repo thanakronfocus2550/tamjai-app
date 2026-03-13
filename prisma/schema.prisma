@@ -92,6 +92,7 @@ model User {
   password      String
   role          Role      @default(TENANT_ADMIN)
   tenantId      String?
+  posPin        String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

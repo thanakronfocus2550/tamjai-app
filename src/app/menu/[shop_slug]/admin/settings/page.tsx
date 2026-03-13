@@ -33,7 +33,7 @@ export default function StoreSettingsPage({ params }: { params: Promise<{ shop_s
 
 
 
-    const userPlan = ((session?.user as any)?.plan || "FREE").toUpperCase();
+    const userPlan = (session?.user?.plan ?? "FREE").toUpperCase();
 
     useEffect(() => {
         const fetchData = async () => {
