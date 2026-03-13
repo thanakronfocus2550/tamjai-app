@@ -142,12 +142,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                 body: JSON.stringify({
                     shop_slug,
                     items: cart,
-                    customer: { name, phone, address },
+                    customer: orderMode === "dinein" ? { name: `Table ${tableNumber}`, phone: "N/A" } : { name, phone, address },
                     // @ts-ignore
                     orderType: orderMode,
                     tableNumber: orderMode === "dinein" ? tableNumber : null,
                     total: subtotal + deliveryFee, // Send raw total, server will re-apply promo
-                    promoCode: promoDiscount > 0 ? promoCode : undefined
+                    promoCode: promoDiscount > 0 ? promoCode : undefined,
+                    paymentMethod: orderMode === "dinein" ? "cash" : payMethod, // Default cash for dine-in (pay later)
+                    source: "storefront"
                 }),
             });
             const data = await res.json();
@@ -195,13 +197,21 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                             )}
                         </section>
                     ) : (
-                        <div className="bg-orange-50/50 border border-orange-100 rounded-2xl p-4 text-center">
-                            <p className="text-sm font-bold text-orange-600">สั่งทานที่โต๊ะ {tableNumber}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                                {tenantSettings?.plan === 'POS'
-                                    ? "ไม่ต้องกรอกข้อมูลผู้รับ ดำเนินการชำระเงินได้ทันที"
-                                    : "ขออภัย ร้านนี้ไม่รองรับการสั่งที่โต๊ะผ่านระบบปกติ"}
-                            </p>
+                        <div className="bg-orange-50/50 border border-orange-100 rounded-[2rem] p-8 text-center space-y-3">
+                            <div className="h-16 w-16 bg-orange-500 text-white rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-orange-200 animate-bounce">
+                                <Users className="h-8 w-8" />
+                            </div>
+                            <div>
+                                <p className="text-xl font-black text-gray-900">สั่งทานที่โต๊ะ {tableNumber}</p>
+                                <p className="text-sm text-orange-600 font-bold mt-1">
+                                    กดสั่งได้ทันที ไม่ต้องกรอกข้อมูลส่วนตัว
+                                </p>
+                            </div>
+                            <div className="pt-2">
+                                <span className="inline-block bg-white px-4 py-2 rounded-full border border-orange-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                    จ่ายเงินตอนเช็คบิลที่โต๊ะ
+                                </span>
+                            </div>
                         </div>
                     )}
 
@@ -367,27 +377,29 @@ export default function CheckoutPage({ params }: { params: Promise<{ shop_slug: 
                         </section>
                     )}
 
-                    {/* Payment method */}
-                    <section className="bg-white border border-gray-100 rounded-2xl p-4">
-                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">ช่องทางชำระเงิน</p>
-                        <div className="space-y-2">
-                            {([
-                                { id: "promptpay" as PayMethod, label: "โอนเงิน / พร้อมเพย์", sublabel: "ได้เลขบัญชีร้านหลังยืนยันออเดอร์", icon: <CreditCard className="h-5 w-5 text-blue-600" />, bg: "bg-blue-50" },
-                                { id: "cash" as PayMethod, label: "เงินสด (ปลายทาง)", sublabel: "จ่ายให้ไรเดอร์ / เมื่อรับที่ร้าน", icon: <Banknote className="h-5 w-5 text-emerald-600" />, bg: "bg-emerald-50" },
-                            ]).map(p => (
-                                <label key={p.id} onClick={() => setPayMethod(p.id)}
-                                    className={"flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all " + (payMethod === p.id ? "border-orange-500 bg-orange-50/30" : "border-gray-100 hover:bg-gray-50")}
-                                >
-                                    <div className={"h-9 w-9 " + p.bg + " rounded-lg flex items-center justify-center shrink-0"}>{p.icon}</div>
-                                    <div className="flex-1">
-                                        <p className="font-semibold text-gray-900 text-sm">{p.label}</p>
-                                        <p className="text-xs text-gray-500">{p.sublabel}</p>
-                                    </div>
-                                    <div className={"h-5 w-5 rounded-full border-2 transition-all shrink-0 " + (payMethod === p.id ? "border-orange-500 border-[6px]" : "border-gray-300")} />
-                                </label>
-                            ))}
-                        </div>
-                    </section>
+                    {/* Payment method - Hidden for dine-in */}
+                    {orderMode !== "dinein" && (
+                        <section className="bg-white border border-gray-100 rounded-2xl p-4">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">ช่องทางชำระเงิน</p>
+                            <div className="space-y-2">
+                                {([
+                                    { id: "promptpay" as PayMethod, label: "โอนเงิน / พร้อมเพย์", sublabel: "ได้เลขบัญชีร้านหลังยืนยันออเดอร์", icon: <CreditCard className="h-5 w-5 text-blue-600" />, bg: "bg-blue-50" },
+                                    { id: "cash" as PayMethod, label: "เงินสด (ปลายทาง)", sublabel: "จ่ายให้ไรเดอร์ / เมื่อรับที่ร้าน", icon: <Banknote className="h-5 w-5 text-emerald-600" />, bg: "bg-emerald-50" },
+                                ]).map(p => (
+                                    <label key={p.id} onClick={() => setPayMethod(p.id)}
+                                        className={"flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all " + (payMethod === p.id ? "border-orange-500 bg-orange-50/30" : "border-gray-100 hover:bg-gray-50")}
+                                    >
+                                        <div className={"h-9 w-9 " + p.bg + " rounded-lg flex items-center justify-center shrink-0"}>{p.icon}</div>
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-gray-900 text-sm">{p.label}</p>
+                                            <p className="text-xs text-gray-500">{p.sublabel}</p>
+                                        </div>
+                                        <div className={"h-5 w-5 rounded-full border-2 transition-all shrink-0 " + (payMethod === p.id ? "border-orange-500 border-[6px]" : "border-gray-300")} />
+                                    </label>
+                                ))}
+                            </div>
+                        </section>
+                    )}
                 </div>
 
                 {/* Bottom CTA */}

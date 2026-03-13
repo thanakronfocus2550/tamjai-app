@@ -33,12 +33,13 @@ export async function PATCH(
         }
 
         const body = await request.json();
-        const { status, tableNumber } = body;
+        const { status, tableNumber, items } = body;
 
         const order = await prisma.order.update({
             where: { id: currentOrder.id }, // Use the absolute id we found
             data: {
                 ...(status ? { status } : {}),
+                ...(items ? { items } : {}),
                 // @ts-ignore
                 ...(tableNumber ? { tableNumber: tableNumber.toString() } : {})
             }

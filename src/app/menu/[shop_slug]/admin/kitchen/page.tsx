@@ -53,6 +53,25 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
         return () => clearInterval(interval);
     }, [shop_slug, isLoading, alertsActive]);
 
+    const handleServeItem = async (order: any, itemIndex: number) => {
+        const updatedItems = [...order.items];
+        updatedItems[itemIndex] = { ...updatedItems[itemIndex], isServed: true };
+
+        // Optimistic update
+        setOrders(prev => prev.map(o => o.id === order.id ? { ...o, items: updatedItems } : o));
+
+        try {
+            await fetch(`/api/orders/${order.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items: updatedItems }),
+            });
+        } catch (err) {
+            console.error("Serve item error:", err);
+            fetchOrders();
+        }
+    };
+
     const updateStatus = async (orderId: string, nextStatus: OrderStatus) => {
         setUpdatingId(orderId);
 
@@ -172,8 +191,17 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                                 {/* Card Header */}
                                 <div className={`p-5 flex items-center justify-between transition-colors duration-500 ${headerClass}`}>
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none">Order ID</p>
-                                        <h2 className="text-xl font-black tracking-tight mt-1 leading-none">#{order.orderId}</h2>
+                                        {orderType === "dinein" ? (
+                                            <>
+                                                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none">Table</p>
+                                                <h2 className="text-4xl font-black tracking-tight mt-1 leading-none text-white">{order.tableNumber || "?"}</h2>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <p className="text-[10px] font-black uppercase tracking-widest opacity-80 leading-none">Order ID</p>
+                                                <h2 className="text-xl font-black tracking-tight mt-1 leading-none">#{order.orderId}</h2>
+                                            </>
+                                        )}
                                     </div>
                                     <div className="text-right">
                                         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${elapsed >= 15 ? "bg-white text-red-600" : elapsed >= 5 ? "bg-white text-amber-600" : "bg-white/20 text-white"}`}>
@@ -188,13 +216,15 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                                     <div className="space-y-3">
                                         {items.map((item: any, i: number) => (
                                             <div key={i} className="flex gap-4">
-                                                <div className="h-10 w-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-xl font-black text-orange-500 shrink-0">
-                                                    {item.qty}
+                                                <div className={`h-10 w-10 rounded-2xl border flex items-center justify-center text-xl font-black shrink-0 ${item.isServed ? "bg-emerald-500 border-emerald-400 text-white" : "bg-white/5 border-white/10 text-orange-500"}`}>
+                                                    {item.isServed ? <CheckCircle2 className="h-5 w-5" /> : item.qty}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-black text-lg leading-tight uppercase tracking-tight">{item.name}</p>
+                                                    <p className={`font-black text-lg leading-tight uppercase tracking-tight ${item.isServed ? "text-white/30 line-through" : "text-white"}`}>
+                                                        {item.name}
+                                                    </p>
                                                     <div className="flex flex-wrap gap-1 mt-1.5">
-                                                        {Object.entries(item.options || {}).map(([group, labels]) => {
+                                                        {!item.isServed && Object.entries(item.options || {}).map(([group, labels]) => {
                                                             if (group === "note") return null;
                                                             const selected = Array.isArray(labels) ? labels : [labels];
                                                             return selected.map((label, idx) => (
@@ -203,7 +233,7 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                                                                 </span>
                                                             ));
                                                         })}
-                                                        {item.note && (
+                                                        {item.note && !item.isServed && (
                                                             <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-2xl w-full mt-2">
                                                                 <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-1">Kitchen Note:</p>
                                                                 <p className="text-sm font-bold text-white leading-relaxed">"{item.note}"</p>
@@ -211,6 +241,14 @@ export default function KitchenPage({ params }: { params: Promise<{ shop_slug: s
                                                         )}
                                                     </div>
                                                 </div>
+                                                {!item.isServed && (
+                                                    <button
+                                                        onClick={() => handleServeItem(order, i)}
+                                                        className="h-10 px-3 rounded-xl bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-orange-600 transition-all shrink-0 active:scale-95"
+                                                    >
+                                                        Serve
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

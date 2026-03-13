@@ -10,7 +10,7 @@ interface Order {
     shopSlug: string;
     status: string; // new, prepping, ready, completed, cancelled
     totalAmount: any;
-    items: Array<{ name: string; qty: number; price: number; options: { [key: string]: any } }>;
+    items: Array<{ name: string; qty: number; price: number; options: { [key: string]: any }; isServed?: boolean }>;
     customer: { name: string; phone: string; address?: string };
     paymentMethod: string;
     createdAt: string;
@@ -159,7 +159,18 @@ export default function OrderStatusPage({ params }: { params: Promise<{ shop_slu
                                     <div className="flex gap-2 min-w-0">
                                         <span className="font-bold text-orange-500 text-sm">{item.qty}x</span>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-900">{item.name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-sm font-bold text-gray-900">{item.name}</p>
+                                                {item.isServed ? (
+                                                    <span className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-1.5 py-0.5 rounded-lg uppercase tracking-widest border border-emerald-100 flex items-center gap-1">
+                                                        <CheckCircle2 className="h-2.5 w-2.5" /> เสิร์ฟแล้ว
+                                                    </span>
+                                                ) : (
+                                                    <span className="bg-amber-50 text-amber-600 text-[9px] font-black px-1.5 py-0.5 rounded-lg uppercase tracking-widest border border-amber-100 flex items-center gap-1">
+                                                        <Clock className="h-2.5 w-2.5 animate-pulse" /> กำลังปรุง
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div className="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-1">
                                                 {Object.entries(item.options || {}).map(([group, labels]) => {
                                                     if (group === "note") return null;
@@ -171,7 +182,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ shop_slu
                                                         </span>
                                                     );
                                                 })}
-                                                {item.options.note && (
+                                                {item.options?.note && (
                                                     <span className="text-orange-400 italic font-medium w-full mt-0.5">
                                                         "{item.options.note}"
                                                     </span>

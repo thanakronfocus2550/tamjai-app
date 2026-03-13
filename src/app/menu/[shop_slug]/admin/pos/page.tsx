@@ -735,12 +735,15 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                                 ))}
                             </div>
 
-                            <div className="bg-orange-500/5 border border-orange-500/20 rounded-[2.5rem] p-8 flex items-center justify-between">
+                            <div className="bg-orange-500/10 border border-orange-500/20 rounded-[2.5rem] p-10 flex items-center justify-between shadow-2xl shadow-orange-500/5">
                                 <div>
-                                    <p className="text-xs font-black text-[#4E5460] uppercase tracking-[0.2em] mb-1">ยอดรวมทั้งหมด</p>
-                                    <p className="text-5xl font-black text-white tracking-tighter"><span className="text-orange-500 text-3xl">฿</span>{tableOrders.reduce((s, o) => s + Number(o.totalAmount), 0).toLocaleString()}</p>
+                                    <p className="text-sm font-black text-orange-500 uppercase tracking-[0.3em] mb-2">ยอดรวมสุทธิ</p>
+                                    <p className="text-7xl font-black text-white tracking-tighter shadow-orange-500/10">
+                                        <span className="text-orange-500 text-4xl mr-1">฿</span>
+                                        {tableOrders.reduce((s, o) => s + Number(o.totalAmount), 0).toLocaleString()}
+                                    </p>
                                 </div>
-                                <div className="flex gap-4">
+                                <div className="flex flex-col gap-3">
                                     <button
                                         onClick={() => {
                                             const total = tableOrders.reduce((s, o) => s + Number(o.totalAmount), 0);
@@ -750,15 +753,15 @@ export default function POSPage({ params }: { params: Promise<{ shop_slug: strin
                                             setShowPaymentQR(true);
                                             setShowVisualBilling(false);
                                         }}
-                                        className="bg-white text-gray-900 h-16 px-8 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-50 transition-all shadow-xl"
+                                        className="bg-white text-gray-900 h-16 px-10 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-orange-50 transition-all shadow-xl active:scale-95 flex items-center gap-3"
                                     >
-                                        แสดง QR รับเงิน
+                                        <QrCode className="h-5 w-5" /> สร้าง QR รับเงิน
                                     </button>
                                     <button
                                         onClick={() => handleTableCheckout("cash")}
-                                        className="bg-orange-500 text-white h-16 px-8 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20"
+                                        className="bg-orange-500 text-white h-16 px-10 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-orange-600 transition-all shadow-xl shadow-orange-500/20 active:scale-95 flex items-center gap-3"
                                     >
-                                        ชำระเงินสด
+                                        <Banknote className="h-6 w-6" /> รับเงินสด
                                     </button>
                                 </div>
                             </div>
