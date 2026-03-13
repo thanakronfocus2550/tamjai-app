@@ -200,7 +200,12 @@ export async function GET(request: NextRequest) {
             }
         });
 
-        return NextResponse.json(orders, { status: 200 });
+        const serializedOrders = orders.map((o: any) => ({
+            ...o,
+            totalAmount: Number(o.totalAmount)
+        }));
+
+        return NextResponse.json(serializedOrders, { status: 200 });
     } catch (err: any) {
         console.error("Fetch orders error:", err);
         const { searchParams } = new URL(request.url);

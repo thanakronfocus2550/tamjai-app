@@ -45,7 +45,12 @@ export async function PATCH(
             }
         });
 
-        return NextResponse.json(order, { status: 200 });
+        const serializedOrder = {
+            ...order,
+            totalAmount: Number(order.totalAmount)
+        };
+
+        return NextResponse.json(serializedOrder, { status: 200 });
     } catch (err) {
         console.error("Update order error:", err);
         return NextResponse.json({ error: "Failed to update order" }, { status: 500 });
@@ -66,7 +71,12 @@ export async function GET(
             return NextResponse.json({ error: "Order not found" }, { status: 404 });
         }
 
-        return NextResponse.json(order, { status: 200 });
+        const serializedOrder = {
+            ...order,
+            totalAmount: Number(order.totalAmount)
+        };
+
+        return NextResponse.json(serializedOrder, { status: 200 });
     } catch (err) {
         console.error("Fetch order error:", err);
         return NextResponse.json({ error: "Failed to fetch order" }, { status: 500 });

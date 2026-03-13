@@ -44,7 +44,13 @@ export async function GET(
             return NextResponse.json({ error: "Shop not found" }, { status: 404 });
         }
 
-        return NextResponse.json(tenant);
+        // Handle Decimal serialization
+        const serializedTenant = {
+            ...tenant,
+            deliveryFee: Number(tenant.deliveryFee)
+        };
+
+        return NextResponse.json(serializedTenant);
     } catch (error: any) {
         console.error("Error fetching settings:", {
             error,
