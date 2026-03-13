@@ -9,8 +9,8 @@ export async function GET(
     req: Request,
     { params }: { params: Promise<{ shop_slug: string }> }
 ) {
+    const { shop_slug } = await params;
     try {
-        const { shop_slug } = await params;
 
         const tenant = await prisma.tenant.findUnique({
             where: { slug: shop_slug },
@@ -28,9 +28,18 @@ export async function GET(
         });
 
         return NextResponse.json(products);
-    } catch (error) {
-        console.error("Error fetching products:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Error fetching products:", {
+            error,
+            message: error.message,
+            stack: error.stack,
+            shop_slug
+        });
+        return NextResponse.json({
+            error: "Internal Server Error",
+            details: error.message,
+            shop_slug
+        }, { status: 500 });
     }
 }
 

@@ -38,9 +38,18 @@ export async function GET(
         });
 
         return NextResponse.json(currentShift);
-    } catch (error) {
-        console.error("Error fetching current shift:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+    } catch (error: any) {
+        console.error("Error fetching current shift:", {
+            error,
+            message: error.message,
+            stack: error.stack,
+            shop_slug
+        });
+        return NextResponse.json({
+            message: "Internal Server Error",
+            details: error.message,
+            shop_slug
+        }, { status: 500 });
     }
 }
 
@@ -141,13 +150,17 @@ export async function POST(
 
         return NextResponse.json({ message: "Invalid action" }, { status: 400 });
     } catch (error: any) {
-        console.error("Error managing shift:", error);
-        const { shop_slug } = await params;
+        console.error("Error managing shift:", {
+            error,
+            message: error.message,
+            stack: error.stack,
+            shop_slug
+        });
         return NextResponse.json({
             message: "Internal Server Error",
             error: error.message,
-            debug: { shop_slug, params: await params },
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            details: error.message,
+            shop_slug
         }, { status: 500 });
     }
 }
